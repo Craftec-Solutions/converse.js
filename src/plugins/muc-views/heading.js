@@ -192,18 +192,19 @@ export default class MUCHeading extends CustomElement {
             }
         }
 
-        if (!api.settings.get('singleton')) {
+        if (!api.settings.get('singleton') && this.model.getOwnAffiliation() !== 'owner') {
             buttons.push({
                 'i18n_text': __('Leave'),
                 'i18n_title': __('Leave and close this groupchat'),
                 'handler': async (ev) => {
                     ev.stopPropagation();
-                    const messages = [__('Are you sure you want to leave this groupchat?')];
-                    const result = await api.confirm(__('Confirm'), messages);
-                    result && this.close(ev);
+                    window.leaveGroupChat(this.model.id).result.then(() => {
+                      this.close(ev);
+                    }).catch(() => {
+                      // Noop
+                    });
                 },
                 'a_class': 'close-chatbox-button',
-                'standalone': api.settings.get('view_mode') === 'overlayed',
                 'icon_class': 'fa-sign-out-alt',
                 'name': 'signout'
             });
