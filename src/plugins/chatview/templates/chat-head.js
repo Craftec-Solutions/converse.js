@@ -13,7 +13,7 @@ const { HEADLINES_TYPE } = constants;
 export default (el) => {
     const { jid, status, type } = el.model.attributes;
     const heading_buttons_promise = el.getHeadingButtons();
-    const showUserDetailsModal = /** @param {Event} ev */ (ev) => el.showUserDetailsModal(ev);
+    const showUserDetailsModal = /** @param {Event} ev */ (ev) => window.showUserProfile(jid);
 
     const i18n_profile = __("The User's Profile Image");
     const display_name = el.model.getDisplayName();

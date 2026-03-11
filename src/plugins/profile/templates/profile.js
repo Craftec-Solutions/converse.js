@@ -29,10 +29,7 @@ export default (el) => {
     return html`
         <div class="userinfo">
             <div class="controlbox-section profile d-flex justify-content-between">
-                <a class="show-profile"
-                        href="#"
-                        @click="${(ev) => el.showProfileModal(ev, 'profile')}"
-                        title="${i18n_change_profile}">
+                <span class="show-profile">
                     <converse-avatar class="avatar align-self-center"
                         .model=${el.model}
                         name="${el.model.getDisplayName()}"
@@ -41,7 +38,7 @@ export default (el) => {
                     <span class="username align-self-center w-100" role="heading" aria-level="2">
                         ${el.model.getDisplayName()}
                     </span>
-                </a>
+                </span>
                 <converse-controlbox-buttons></converse-controlbox-buttons>
             </div>
             <div class="d-flex xmpp-status">

@@ -119,6 +119,7 @@ export function tplUserDetailsModal(el) {
                           <div class="row mb-2">
                               <div class="col-sm-4"><label>${i18n_full_name}:</label></div>
                               <div class="col-sm-8">${o.fullname}</div>
+                              <div class="col-sm-12"><a href="#" @click="${() => window.showUserProfile(el.model.get('jid'))}">See full profile</a></div>
                           </div>
                       `
                     : ''}
