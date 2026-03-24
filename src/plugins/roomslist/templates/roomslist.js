@@ -125,11 +125,11 @@ function tplRoomDomainGroupList (el, rooms) {
 export default (el) => {
     const group_by_domain = api.settings.get('muc_grouped_by_domain');
     const rooms = el.getRoomsToShow();
-    const i18n_desc_rooms = __('Click to toggle the list of open groupchats');
-    const i18n_heading_chatrooms = __('Groupchats');
-    const i18n_title_list_rooms = __('View groupchats');
-    const title_manage_rooms = 'Manage groupchats';
-    const i18n_title_new_room = __('Add groupchat');
+    const i18n_desc_rooms = __('Click to toggle the list of open group chats');
+    const i18n_heading_chatrooms = __('Group chats');
+    const i18n_title_list_rooms = __('View group chats');
+    const title_manage_rooms = 'Manage group chats';
+    const i18n_title_new_room = __('Add group chat');
     const i18n_show_bookmarks = __('Bookmarks');
     const is_closed = el.model.get('toggle_state') === CLOSED;
 

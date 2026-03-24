@@ -92,7 +92,7 @@ export default class MUCListModal extends BaseModal {
     }
 
     getModalTitle() {
-        return __('Query for Groupchats');
+        return __('Query for group chats');
     }
 
     /**
@@ -129,11 +129,11 @@ export default class MUCListModal extends BaseModal {
         this.loading_items = false;
         const rooms = iq ? sizzle('query item', iq) : [];
         if (rooms.length) {
-            this.model.set({ 'feedback_text': __('Groupchats found') }, { 'silent': true });
+            this.model.set({ 'feedback_text': __('Group chats found') }, { 'silent': true });
             this.items = rooms.map(getAttributes);
         } else {
             this.items = [];
-            this.model.set({ 'feedback_text': __('No groupchats found') }, { 'silent': true });
+            this.model.set({ 'feedback_text': __('No group chats found') }, { 'silent': true });
         }
         this.requestUpdate();
         return true;

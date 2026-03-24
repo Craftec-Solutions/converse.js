@@ -2736,10 +2736,10 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
             }
         } else if (error_type === 'cancel') {
             if (error.querySelector('not-allowed')) {
-                const message = __('You are not allowed to create new groupchats.');
+                const message = __('You are not allowed to create new group chats.');
                 this.setDisconnectionState(message, reason);
             } else if (error.querySelector('not-acceptable')) {
-                const message = __("Your nickname doesn't conform to this groupchat's policies.");
+                const message = __("Your nickname doesn't conform to this group chat's policies.");
                 this.setDisconnectionState(message, reason);
             } else if (sizzle(`gone[xmlns="${Strophe.NS.STANZAS}"]`, error).length) {
                 const moved_jid = sizzle(`gone[xmlns="${Strophe.NS.STANZAS}"]`, error)

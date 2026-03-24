@@ -5,7 +5,7 @@ import spinner from "templates/spinner.js";
 
 
 const form = (o) => {
-    const i18n_query = __('Show groupchats');
+    const i18n_query = __('Show group chats');
     const i18n_server_address = __('Server address');
     return html`
         <form class="converse-form list-chatrooms"
