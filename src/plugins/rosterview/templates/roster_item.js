@@ -51,6 +51,13 @@ function getLastMessage(contact) {
 }
 
 /**
+ * @param {string} text
+ */
+function isLikelyURL(text) {
+    return /^https?:\/\//i.test(text);
+}
+
+/**
  * @param {object} contact
  */
 function getLastMessagePreview(contact) {
@@ -63,7 +70,14 @@ function getLastMessagePreview(contact) {
     if (!normalized_text) {
         return '';
     }
-    return message.get('sender') === 'me' ? `${__('You')}: ${normalized_text}` : normalized_text;
+    const is_attachment =
+        Boolean(message.get('file')) ||
+        Boolean(message.get('oob_url')) ||
+        message.get('upload') === 'success' ||
+        (isLikelyURL(normalized_text) && normalized_text.includes('/upload/'));
+
+    const preview_text = is_attachment ? `<${__('Attachment')}>` : normalized_text;
+    return message.get('sender') === 'me' ? `${__('You')}: ${preview_text}` : preview_text;
 }
 
 /**
