@@ -70,6 +70,7 @@ export type XFormField = {
     type?: XFormFieldTypes;
     text?: string;
     value?: string;
+    values?: string[];
     required?: boolean;
     checked?: boolean;
     options?: XFormOption[];
@@ -146,6 +147,8 @@ export type MessageAttributes = EncryptionAttrs & MessageErrorAttributes & {
     received: string;
     references: Array<Reference>;
     replace_id: string;
+    reply_to_id: string;
+    reply_to: string;
     retracted: string;
     retracted_id: string;
     sender: 'me' | 'them';
@@ -165,5 +168,10 @@ export type FileUploadMessageAttributes = {
 };
 export type MessageMarkerType = 'displayed' | 'received' | 'acknowledged';
 export type ChatStateType = 'active' | 'composing' | 'paused' | 'inactive' | 'gone';
+export type StorageKeys = {
+    storage_key: string;
+    fetched_flag_key: string;
+};
+export type ChatBoxOrMUC = import('../plugins/chat/model.js').default | import('../plugins/muc/muc.js').default;
 export {};
 //# sourceMappingURL=types.d.ts.map

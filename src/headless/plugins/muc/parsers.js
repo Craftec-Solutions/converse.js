@@ -17,6 +17,7 @@ import {
     getOutOfBandAttributes,
     getReceiptId,
     getReferences,
+    getReplyAttributes,
     getRetractionAttributes,
     getSpoilerAttributes,
     getStanzaIDs,
@@ -54,7 +55,7 @@ export function getMEPActivities(stanza) {
                 return { from, msgid, message, reason, references, 'type': 'mep' };
             }
             return {};
-        }
+        },
     );
 }
 
@@ -163,7 +164,7 @@ function getStatusCodes(stanza, type) {
         .map(/** @param {Element} s */ (s) => s.getAttribute('code'))
         .filter(
             /** @param {MUCStatusCode} c */
-            (c) => STATUS_CODE_STANZAS[c]?.includes(type)
+            (c) => STATUS_CODE_STANZAS[c]?.includes(type),
         );
 
     if (type === 'presence' && codes.includes('333') && codes.includes('307')) {
@@ -220,14 +221,14 @@ export async function parseMUCMessage(original_stanza, chatbox) {
 
     const forwarded_stanza = sizzle(
         `result[xmlns="${NS.MAM}"] > forwarded[xmlns="${NS.FORWARD}"] > message`,
-        original_stanza
+        original_stanza,
     ).pop();
 
     const stanza = forwarded_stanza || original_stanza;
     if (sizzle(`message > forwarded[xmlns="${Strophe.NS.FORWARD}"]`, stanza).length) {
         return new StanzaParseError(
             stanza,
-            `Invalid Stanza: Forged MAM groupchat message from ${stanza.getAttribute('from')}`
+            `Invalid Stanza: Forged MAM groupchat message from ${stanza.getAttribute('from')}`,
         );
     }
 
@@ -238,7 +239,7 @@ export async function parseMUCMessage(original_stanza, chatbox) {
         if (sizzle(`message > forwarded[xmlns="${Strophe.NS.FORWARD}"]`, forwarded_stanza).length) {
             return new StanzaParseError(
                 original_stanza,
-                `Invalid Stanza: Forged MAM groupchat message from ${original_stanza.getAttribute('from')}`
+                `Invalid Stanza: Forged MAM groupchat message from ${original_stanza.getAttribute('from')}`,
             );
         }
         delay = sizzle(`delay[xmlns="${Strophe.NS.DELAY}"]`, forwarded_stanza.parentElement).pop();
@@ -288,7 +289,8 @@ export async function parseMUCMessage(original_stanza, chatbox) {
             getRetractionAttributes(stanza, original_stanza),
             getModerationAttributes(stanza),
             getEncryptionAttributes(stanza),
-            getStatusCodes(stanza, 'message')
+            getReplyAttributes(stanza),
+            getStatusCodes(stanza, 'message'),
         )
     );
 
@@ -301,23 +303,23 @@ export async function parseMUCMessage(original_stanza, chatbox) {
             'message': attrs.body || attrs.error, // TODO: Should only be used for error and info messages
             'sender': getSender(attrs, chatbox),
         },
-        attrs
+        attrs,
     );
 
     if (attrs.is_archived && original_stanza.getAttribute('from') !== attrs.from_muc) {
         return new StanzaParseError(
             original_stanza,
-            `Invalid Stanza: Forged MAM message from ${original_stanza.getAttribute('from')}`
+            `Invalid Stanza: Forged MAM message from ${original_stanza.getAttribute('from')}`,
         );
     } else if (attrs.is_archived && original_stanza.getAttribute('from') !== chatbox.get('jid')) {
         return new StanzaParseError(
             original_stanza,
-            `Invalid Stanza: Forged MAM groupchat message from ${stanza.getAttribute('from')}`
+            `Invalid Stanza: Forged MAM groupchat message from ${stanza.getAttribute('from')}`,
         );
     } else if (attrs.is_carbon) {
         return new StanzaParseError(
             original_stanza,
-            'Invalid Stanza: MUC messages SHOULD NOT be XEP-0280 carbon copied'
+            'Invalid Stanza: MUC messages SHOULD NOT be XEP-0280 carbon copied',
         );
     }
 
@@ -325,10 +327,13 @@ export async function parseMUCMessage(original_stanza, chatbox) {
     attrs['id'] = attrs['origin_id'] || attrs[`stanza_id ${attrs.from_muc || attrs.from}`] || u.getUniqueId();
 
     /**
-     * *Hook* which allows plugins to add additional parsing
+     * *Hook* which allows plugins to add additional parsing.
+     * Listeners receive `(stanza, attrs, chatbox)` — the chatbox is passed as
+     * an extra argument so that plugins can inspect room features (e.g.
+     * anonymity mode) without having to look it up themselves.
      * @event _converse#parseMUCMessage
      */
-    attrs = await api.hook('parseMUCMessage', original_stanza, attrs);
+    attrs = await api.hook('parseMUCMessage', original_stanza, attrs, chatbox);
 
     // We call this after the hook, to allow plugins to decrypt encrypted
     // messages, since we need to parse the message text to determine whether
@@ -367,7 +372,7 @@ export function parseMemberListIQ(iq) {
                 data['role'] = nick;
             }
             return data;
-        }
+        },
     );
 }
 
@@ -430,7 +435,7 @@ export async function parseMUCPresence(stanza, chatbox) {
             /** @param {Element} h */ (h) => ({
                 title: h.getAttribute('title'),
                 uri: h.getAttribute('uri'),
-            })
+            }),
         ),
         ...getStatusCodes(stanza, 'presence'),
         ...parsePresenceUserItem(stanza, nick),

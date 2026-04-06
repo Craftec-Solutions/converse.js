@@ -2,6 +2,7 @@ import { __ } from "i18n";
 import { api, u } from "@converse/headless";
 import { html } from "lit";
 import { resetElementHeight } from "../utils.js";
+import 'shared/chat/reply-preview.js';
 
 /**
  * @param {import('../message-form').default} el
@@ -11,13 +12,14 @@ export default (el) => {
     const label_message = composing_spoiler ? __("Hidden message") : __("Message");
     const label_spoiler_hint = __("Optional hint");
     const message_limit = api.settings.get("message_limit");
-    const show_call_button = api.settings.get("visible_toolbar_buttons").call;
-    const show_emoji_button = api.settings.get("visible_toolbar_buttons").emoji;
+    const toolbar_buttons = api.settings.get("visible_toolbar_buttons");
+    const { call: show_call_button, emoji: show_emoji_button, location: show_location_button, spoiler: show_spoiler_button } = toolbar_buttons;
     const show_send_button = api.settings.get("show_send_button");
-    const show_spoiler_button = api.settings.get("visible_toolbar_buttons").spoiler;
     const show_toolbar = api.settings.get("show_toolbar");
 
-    return html` <form
+    return html`
+        <converse-reply-preview .model=${el.model}></converse-reply-preview>
+        <form
         class="chat-message-form"
         @submit="${/** @param {SubmitEvent} ev */ (ev) => el.onFormSubmitted(ev)}"
     >
@@ -28,6 +30,7 @@ export default (el) => {
                   ?composing_spoiler="${composing_spoiler}"
                   ?show_call_button="${show_call_button}"
                   ?show_emoji_button="${show_emoji_button}"
+                  ?show_location_button="${show_location_button}"
                   ?show_send_button="${show_send_button}"
                   ?show_spoiler_button="${show_spoiler_button}"
                   ?show_toolbar="${show_toolbar}"

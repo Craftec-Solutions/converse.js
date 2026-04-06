@@ -1,4 +1,4 @@
-import mock from "../../../tests/mock.js";
+import mock from '../../../tests/mock.js';
 
 const original_timeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
 
@@ -32,7 +32,7 @@ describe('A sent presence stanza', function () {
                     ver="QgayPKawpkPSDYmwT/WM94uAlu0="
                     xmlns="http://jabber.org/protocol/caps"/>
             </presence>`);
-        })
+        }),
     );
 
     it(
@@ -46,9 +46,8 @@ describe('A sent presence stanza', function () {
                 <status>Hello world</status>
                 <priority>0</priority>
                 <x xmlns="vcard-temp:x:update"/>
-                <c hash="sha-1" node="https://conversejs.org" ver="1T0pIfIxYO645OaT9gpXVXOvb9s=" xmlns="http://jabber.org/protocol/caps"/>
+                <c hash="sha-1" node="https://conversejs.org" ver="5xpk8wyeMSdAjnSeIv3fwIjd1r0=" xmlns="http://jabber.org/protocol/caps"/>
             </presence>`);
-
 
             api.settings.set('priority', 2);
             pres = await profile.constructPresence({ show: 'away', status: 'Going jogging' });
@@ -58,7 +57,7 @@ describe('A sent presence stanza', function () {
                 <status>Going jogging</status>
                 <priority>2</priority>
                 <x xmlns="vcard-temp:x:update"/>
-                <c hash="sha-1" node="https://conversejs.org" ver="1T0pIfIxYO645OaT9gpXVXOvb9s=" xmlns="http://jabber.org/protocol/caps"/>
+                <c hash="sha-1" node="https://conversejs.org" ver="5xpk8wyeMSdAjnSeIv3fwIjd1r0=" xmlns="http://jabber.org/protocol/caps"/>
             </presence>`);
 
             api.settings.set('priority', undefined);
@@ -69,8 +68,8 @@ describe('A sent presence stanza', function () {
                 <status>Doing taxes</status>
                 <priority>0</priority>
                 <x xmlns="vcard-temp:x:update"/>
-                <c hash="sha-1" node="https://conversejs.org" ver="1T0pIfIxYO645OaT9gpXVXOvb9s=" xmlns="http://jabber.org/protocol/caps"/>
+                <c hash="sha-1" node="https://conversejs.org" ver="5xpk8wyeMSdAjnSeIv3fwIjd1r0=" xmlns="http://jabber.org/protocol/caps"/>
             </presence>`);
-        })
+        }),
     );
 });

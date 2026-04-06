@@ -301,6 +301,22 @@ export function getErrorAttributes (stanza) {
 }
 
 /**
+ * Given a message stanza, extract XEP-0461 reply attributes
+ * @param {Element} stanza - The message stanza
+ * @returns {Object} An object containing reply_to_id and reply_to if present
+ */
+export function getReplyAttributes (stanza) {
+    const reply = sizzle(`reply[xmlns="${Strophe.NS.REPLY}"]`, stanza).pop();
+    if (reply) {
+        return {
+            reply_to_id: reply.getAttribute('id'),
+            reply_to: reply.getAttribute('to')
+        };
+    }
+    return {};
+}
+
+/**
  * Given a message stanza, find and return any XEP-0372 references
  * @param {Element} stanza - The message stanza
  * @returns {import('./types').XEP372Reference[]}
@@ -489,12 +505,13 @@ function parseXFormField(field, readonly, stanza) {
     } else if (type === 'fixed') {
         const text = field.querySelector('value')?.textContent;
         return { text, label, type, var: v, ...result };
-    } else if (type === 'jid-multi') {
+    } else if (type === 'jid-multi' || type === 'text-multi') {
+        const values = Array.from(field.querySelectorAll(':scope > value')).map((el) => el?.textContent);
         return {
             type,
             var: v,
             label,
-            value: field.querySelector('value')?.textContent,
+            values,
             required: !!field.querySelector('required'),
             ...result,
         };

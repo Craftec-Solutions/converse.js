@@ -32,20 +32,20 @@ declare const _default: {
     isVideoURL(url: string | URL, headers?: Headers): boolean;
     isImageURL(url: string | URL, headers?: Headers): boolean;
     isEncryptedFileURL(url: string | URL): boolean;
-    withinString(string: string, callback: Function, options?: import("./types.js").ProcessStringOptions): string;
+    withinString(string: string, callback: Function, options?: import("./types").ProcessStringOptions): string;
     getHeaders(url: string): Promise<Headers>;
-    getMetadataForURL(o: import("./types.js").MediaURLIndexes): Promise<import("./types.js").MediaURLMetadata>;
+    getMetadataForURL(o: import("./types").MediaURLIndexes): Promise<import("./types").MediaURLMetadata>;
     getMediaURLsMetadata(text: string, offset?: number): Promise<{
-        media_urls?: import("./types.js").MediaURLMetadata[];
+        media_urls?: import("./types").MediaURLMetadata[];
     }>;
-    getMediaURLs(arr: Array<import("./types.js").MediaURLMetadata>, text: string): import("./types.js").MediaURLMetadata[];
-    addMediaURLsOffset(arr: Array<import("./types.js").MediaURLMetadata>, text: string, offset?: number): import("./types.js").MediaURLMetadata[];
+    getMediaURLs(arr: Array<import("./types").MediaURLMetadata>, text: string): import("./types").MediaURLMetadata[];
+    addMediaURLsOffset(arr: Array<import("./types").MediaURLMetadata>, text: string, offset?: number): import("./types").MediaURLMetadata[];
     firstCharToUpperCase(text: string): string;
     getLongestSubstring(string: string, candidates: string[]): string;
     isString(s: any): boolean;
-    getDefaultStorageType(): import("./types.js").StorageType;
-    createStore(id: string, type: import("./types.js").StorageType): import("@converse/skeletor").BrowserStorage;
-    initStorage(model: import("./types.js").StorageModel, id: string, type?: import("./types.js").StorageType): void;
+    getDefaultStorageType(): import("./types").StorageType;
+    createStore(id: string, type: import("./types").StorageType): import("@converse/skeletor").BrowserStorage;
+    initStorage(model: import("./types").StorageModel, id: string, type?: import("./types").StorageType): void;
     isErrorStanza(stanza: Element): boolean;
     isForbiddenError(stanza: Element): boolean;
     isServiceUnavailableError(stanza: Element): boolean;
@@ -67,12 +67,14 @@ declare const _default: {
     isUndefined(x: unknown): boolean;
     isErrorObject(o: unknown): boolean;
     isPersistableModel(model: import("@converse/skeletor").Model): import("@converse/skeletor").BrowserStorage;
+    isEmpty(obj: any | undefined | null): boolean;
     isValidJID(jid?: string | null): boolean;
     isValidMUCJID(jid: string): boolean;
     isSameBareJID(jid1: string, jid2: string): boolean;
     isSameDomain(jid1: string, jid2: string): boolean;
     getJIDFromURI(jid: string): string;
     isOwnJID(jid: string, include_resource?: boolean): boolean;
+    maybeAppendDomain(jid: string): string;
     initPlugins(_converse: ConversePrivateGlobal): void;
     initClientConfig(_converse: ConversePrivateGlobal): Promise<void>;
     initSessionStorage(_converse: ConversePrivateGlobal): Promise<void>;
@@ -81,7 +83,7 @@ declare const _default: {
     initSession(_converse: ConversePrivateGlobal, jid: string): Promise<void>;
     registerGlobalEventHandlers(_converse: ConversePrivateGlobal): void;
     cleanup(_converse: ConversePrivateGlobal): Promise<void>;
-    attemptNonPreboundSession(credentials?: import("./types.js").Credentials, automatic?: boolean): Promise<void>;
+    attemptNonPreboundSession(credentials?: import("./types").Credentials, automatic?: boolean): Promise<void>;
     savedLoginInfo(jid: string): Promise<Model>;
     safeSave(model: Model, attributes: any, options: any): void;
     isElement(el: unknown): boolean;
@@ -92,12 +94,6 @@ declare const _default: {
     siblingIndex(el: Element): number;
     decodeHTMLEntities(str: string): string;
     unescapeHTML(string: string): string;
-    getSelectValues(select: HTMLSelectElement): string[];
-    webForm2xForm(field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement): Element;
-    getCurrentWord(input: HTMLInputElement | HTMLTextAreaElement, index?: number, delineator?: string | RegExp): string;
-    isMentionBoundary(s: string): boolean;
-    replaceCurrentWord(input: HTMLInputElement, new_value: string): void;
-    placeCaretAtEnd(textarea: HTMLTextAreaElement): void;
     colorize(s: string): Promise<string>;
     appendArrayBuffer(buffer1: any, buffer2: any): ArrayBufferLike;
     arrayBufferToHex(ab: any): any;
@@ -107,13 +103,8 @@ declare const _default: {
     base64ToArrayBuffer(b64: any): ArrayBufferLike;
     hexToArrayBuffer(hex: any): ArrayBufferLike;
     unique<T extends unknown>(arr: Array<T>): Array<T>;
-} & CommonUtils & PluginUtils;
+} & import("./types").CommonUtils & import("./types").PluginUtils;
 export default _default;
-export type CommonUtils = Record<string, Function>;
-/**
- * The utils object
- */
-export type PluginUtils = Record<"muc" | "mam" | "omemo" | "roster", CommonUtils>;
 /**
  * Call the callback once all the events have been triggered
  * @param { Array } events: An array of objects, with keys `object` and

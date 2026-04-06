@@ -321,6 +321,38 @@ You will be able to query for even older messages by scrolling upwards in the ch
 (the so-called infinite scrolling pattern).
 
 
+autocomplete_providers_url
+--------------------------
+
+* Default: ``https://data.xmpp.net/providers/v2/providers-Ds.json``
+
+This setting specifies the URL from which to fetch a list of XMPP provider domains
+for autocomplete suggestions when adding a new contact.
+
+When a user types an XMPP address in the "Add a Contact" modal (e.g., ``user@jab``),
+the autocomplete will suggest domains from both:
+
+1. The user's existing roster contacts
+2. The XMPP Providers list fetched from this URL
+
+The URL should return a JSON array of domain strings, for example:
+
+.. code-block:: json
+
+    ["jabber.de", "jabber.fr", "conversations.im", "disroot.org"]
+
+This uses the `XMPP Providers <https://providers.xmpp.net/>`_ project's Category D list,
+which includes all known XMPP providers regardless of quality rating.
+
+To disable this feature and only show domains from the user's roster, set this to an empty string:
+
+.. code-block:: javascript
+
+    converse.initialize({
+        autocomplete_providers_url: ''
+    });
+
+
 auto_fill_history_gaps
 ----------------------
 
@@ -1665,6 +1697,25 @@ You can set the URL where the sound files are hosted with the `sounds_path`_ opt
 
 Requires the `src/converse-notification.js` plugin.
 
+popular_reactions
+-----------------
+
+* Default: ``[':thumbsup:', ':heart:', ':joy:', ':open_mouth:']``
+
+An array of emoji shortnames that are displayed as quick-access reaction buttons
+in the message reaction picker (see `XEP-0444: Message Reactions <https://xmpp.org/extensions/xep-0444.html>`_).
+
+These emojis are shown as the first row of buttons in the reaction picker,
+allowing users to quickly react to messages without opening the full emoji selector.
+
+Example:
+
+.. code-block:: javascript
+
+    converse.initialize({
+        popular_reactions: [':thumbsup:', ':heart:', ':laughing:', ':joy:', ':tada:']
+    });
+
 .. _`prebind_url`:
 
 prebind_url
@@ -1839,6 +1890,26 @@ registration_domain
 
 Specify a domain name for which the registration form will be fetched automatically,
 without the user having to enter any XMPP server domain name.
+
+xmpp_providers_url
+------------------
+
+* Default: ``'https://data.xmpp.net/providers/v2/providers-B.json'``
+
+The URL from which to fetch the curated list of XMPP providers shown on the
+registration form. The list is sourced from the
+`XMPP Providers <https://invent.kde.org/melvo/xmpp-providers>`_ project and
+displays providers grouped by category (A and B) with details such as compliance
+score, server locations, and service properties.
+
+Set to an empty string or ``false`` to disable the provider list and fall back
+to the manual domain input.
+
+.. code-block:: javascript
+
+    converse.initialize({
+        xmpp_providers_url: 'https://data.xmpp.net/providers/v2/providers-B.json'
+    });
 
 render_media
 ------------
