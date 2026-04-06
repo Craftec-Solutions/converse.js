@@ -1,8 +1,10 @@
 import { __ } from 'i18n';
-import { _converse, api } from '@converse/headless';
+import { _converse, api, converse } from '@converse/headless';
 import { html } from 'lit';
 import { getUnreadMsgsDisplay } from 'shared/chat/utils.js';
 import { STATUSES } from '../constants.js';
+
+const { dayjs } = converse.env;
 
 /**
  * @param {import('../contactview').default} el
@@ -41,6 +43,54 @@ export function tplDetailsButton(el) {
 }
 
 /**
+ * @param {object} contact
+ */
+function getLastMessage(contact) {
+    const chatbox = _converse.state.chatboxes?.get(contact.get('jid'));
+    return chatbox?.getMostRecentMessage?.();
+}
+
+/**
+ * @param {object} contact
+ */
+function getLastMessagePreview(contact) {
+    const message = getLastMessage(contact);
+    const text = message?.getMessageText?.();
+    if (typeof text !== 'string') {
+        return '';
+    }
+    const normalized_text = text.replace(/\s+/g, ' ').trim();
+    if (!normalized_text) {
+        return '';
+    }
+    return message.get('sender') === 'me' ? `${__('You')}: ${normalized_text}` : normalized_text;
+}
+
+/**
+ * @param {object} contact
+ */
+function getLastMessageTimestamp(contact) {
+    const message = getLastMessage(contact);
+    const timestamp = message?.get('time');
+    if (!timestamp) {
+        return '';
+    }
+    const date = dayjs(timestamp);
+    if (!date.isValid()) {
+        return '';
+    }
+
+    const now = dayjs();
+    if (date.isSame(now, 'day')) {
+        return date.format(api.settings.get('time_format'));
+    }
+    if (date.isSame(now.subtract(1, 'day'), 'day')) {
+        return __('Yesterday');
+    }
+    return date.format('M/D/YYYY');
+}
+
+/**
  * @param {import('../contactview').default} el
  */
 export default (el) => {
@@ -62,6 +112,8 @@ export default (el) => {
     const num_unread = getUnreadMsgsDisplay(el.model);
     const display_name = el.model.getDisplayName({ context: 'roster' });
     const jid = el.model.get('jid');
+    const last_message = getLastMessagePreview(el.model);
+    const last_message_timestamp = getLastMessageTimestamp(el.model);
     const i18n_chat = is_self
         ? __('Click to chat with yourself')
         : `Click to chat with ${display_name}`;
@@ -78,27 +130,41 @@ export default (el) => {
             data-jid=${jid}
             @click=${el.openChat}
         >
-            <span>
-                <converse-avatar
-                    .model=${el.model}
-                    class="avatar"
-                    name="${el.model.getDisplayName()}"
-                    nonce=${el.model.vcard?.get('vcard_updated')}
-                    height="30"
-                    width="30"
-                ></converse-avatar>
+            <span class="contact-row">
+                <span class="contact-avatar-wrapper">
+                    <converse-avatar
+                        .model=${el.model}
+                        class="avatar"
+                        name="${el.model.getDisplayName()}"
+                        nonce=${el.model.vcard?.get('vcard_updated')}
+                        height="30"
+                        width="30"
+                    ></converse-avatar>
 
-                ${['both', 'to'].includes(el.model.get('subscription'))
-                    ? html` <converse-icon
-                          title="${desc_status}"
-                          color="var(--${color})"
-                          size="1em"
-                          class="${classes} chat-status chat-status--avatar"
-                      ></converse-icon>`
-                    : ''}
+                    ${['both', 'to'].includes(el.model.get('subscription'))
+                        ? html` <converse-icon
+                              title="${desc_status}"
+                              color="var(--${color})"
+                              size="1em"
+                              class="${classes} chat-status chat-status--avatar"
+                          ></converse-icon>`
+                        : ''}
+                </span>
+                <span class="contact-main ${num_unread ? 'unread-msgs' : ''}">
+                    <span class="contact-main__top">
+                        <span class="contact-name contact-name--${show} ${num_unread ? 'unread-msgs' : ''}">
+                            ${display_name}
+                        </span>
+                        <span class="contact-main__meta">
+                            ${num_unread ? html`<span class="msgs-indicator badge">${num_unread}</span>` : ''}
+                            ${last_message_timestamp
+                                ? html`<span class="contact-last-message-time">${last_message_timestamp}</span>`
+                                : ''}
+                        </span>
+                    </span>
+                    ${last_message ? html`<span class="contact-last-message">${last_message}</span>` : ''}
+                </span>
             </span>
-            ${num_unread ? html`<span class="msgs-indicator badge">${num_unread}</span>` : ''}
-            <span class="contact-name contact-name--${show} ${num_unread ? 'unread-msgs' : ''}">${display_name}</span>
         </a>
         <span class="contact-actions">
             <converse-dropdown class="btn-group dropstart list-item-action" .items=${btns}></converse-dropdown>

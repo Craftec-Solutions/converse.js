@@ -150,6 +150,9 @@ export async function handleMessageStanza (stanza) {
     const has_body = !!(body || plaintext);
     const chatbox = await api.chats.get(contact_jid, { nickname: nick }, has_body);
     await chatbox?.queueMessage(attrs);
+    if (has_body && attrs.sender === 'them' && chatbox?.get('closed')) {
+        chatbox.maybeShow(true);
+    }
     /**
      * @typedef {Object} MessageData
      * An object containing the original message stanza, as well as the

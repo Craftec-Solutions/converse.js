@@ -32,7 +32,10 @@ export default class MinimizedChat extends CustomElement {
      */
     close (ev) {
         ev?.preventDefault();
-        this.model.close();
+        // Keep the chat model and its cached messages so roster previews
+        // remain available after closing from the minimized tray.
+        this.model.save({ 'hidden': false, 'closed': true });
+        api.trigger('chatBoxClosed', this.model);
     }
 
     /**

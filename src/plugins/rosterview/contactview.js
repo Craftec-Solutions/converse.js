@@ -3,7 +3,6 @@ import { ObservableElement } from 'shared/components/observable.js';
 import tplRequestingContact from './templates/requesting_contact.js';
 import tplRosterItem from './templates/roster_item.js';
 import tplUnsavedContact from './templates/unsaved_contact.js';
-import { __ } from 'i18n';
 import { blockContact, declineContactRequest, removeContact } from './utils.js';
 
 export default class RosterContactView extends ObservableElement {
@@ -14,6 +13,7 @@ export default class RosterContactView extends ObservableElement {
     constructor() {
         super();
         this.model = null;
+        this.chatbox = null;
         this.observable = /** @type {ObservableProperty} */ ('once');
     }
 
@@ -30,6 +30,58 @@ export default class RosterContactView extends ObservableElement {
         this.listenTo(this.model, 'vcard:add', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:change', () => this.requestUpdate());
         this.listenTo(this.model, 'presence:change', () => this.requestUpdate());
+        const { chatboxes } = _converse.state;
+        if (chatboxes) {
+            this.listenTo(chatboxes, 'add', (chatbox) => this.onChatBoxAdded(chatbox));
+            this.listenTo(chatboxes, 'remove', (chatbox) => this.onChatBoxRemoved(chatbox));
+            this.listenTo(chatboxes, 'destroy', (chatbox) => this.onChatBoxRemoved(chatbox));
+            this.bindChatBoxListeners();
+        }
+    }
+
+    getChatBox() {
+        return _converse.state.chatboxes?.get(this.model.get('jid'));
+    }
+
+    bindChatBoxListeners(chatbox = this.getChatBox()) {
+        if (!chatbox || this.chatbox === chatbox) {
+            return;
+        }
+        this.unbindChatBoxListeners();
+        this.chatbox = chatbox;
+        this.listenTo(this.chatbox, 'change', () => this.requestUpdate());
+        this.listenTo(this.chatbox.messages, 'add change destroy reset remove', () => this.requestUpdate());
+    }
+
+    unbindChatBoxListeners() {
+        if (!this.chatbox) {
+            return;
+        }
+        this.stopListening(this.chatbox);
+        this.stopListening(this.chatbox.messages);
+        this.chatbox = null;
+    }
+
+    /**
+     * @param {object} chatbox
+     */
+    onChatBoxAdded(chatbox) {
+        if (chatbox.get('jid') !== this.model.get('jid')) {
+            return;
+        }
+        this.bindChatBoxListeners(chatbox);
+        this.requestUpdate();
+    }
+
+    /**
+     * @param {object} chatbox
+     */
+    onChatBoxRemoved(chatbox) {
+        if (this.chatbox !== chatbox) {
+            return;
+        }
+        this.unbindChatBoxListeners();
+        this.requestUpdate();
     }
 
     render() {
