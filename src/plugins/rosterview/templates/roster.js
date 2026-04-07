@@ -184,6 +184,7 @@ export default (el) => {
             </span>
             <converse-dropdown
                 class="chatbox-btn btn-group dropstart dropdown--contacts"
+                .icon_size=${'0.82em'}
                 .items=${btns}
             ></converse-dropdown>
         </div>

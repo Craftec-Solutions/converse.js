@@ -17,6 +17,7 @@ export default class Dropdown extends DropdownBase {
     static get properties() {
         return {
             icon_classes: { type: String },
+            icon_size: { type: String },
             items: { type: Array },
         };
     }
@@ -24,6 +25,7 @@ export default class Dropdown extends DropdownBase {
     constructor() {
         super();
         this.icon_classes = "fa fa-ellipsis-v";
+        this.icon_size = "1em";
         this.items = [];
         this.id = u.getUniqueId();
     }
@@ -37,7 +39,7 @@ export default class Dropdown extends DropdownBase {
                     aria-haspopup="true"
                     aria-expanded="false"
                     aria-label=${__("Menu")}>
-                <converse-icon aria-hidden="true" size="1em" class="${this.icon_classes}">
+                <converse-icon aria-hidden="true" size="${this.icon_size}" class="${this.icon_classes}">
             </button>
             <ul class="dropdown-menu" aria-labelledby="${this.id}">
                 ${this.items.map((b) => html`<li>${until(b, "")}</li>`)}
