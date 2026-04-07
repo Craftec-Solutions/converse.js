@@ -105,6 +105,13 @@ function getLastMessageTimestamp(contact) {
 }
 
 /**
+ * @param {string|number} num_unread
+ */
+function getUnreadMessagesTitle(num_unread) {
+    return `${num_unread} ${Number(num_unread) === 1 ? __('unread message') : __('unread messages')}`;
+}
+
+/**
  * @param {import('../contactview').default} el
  */
 export default (el) => {
@@ -170,7 +177,13 @@ export default (el) => {
                             ${display_name}
                         </span>
                         <span class="contact-main__meta">
-                            ${num_unread ? html`<span class="msgs-indicator badge">${num_unread}</span>` : ''}
+                            ${num_unread
+                                ? html`<span
+                                      class="msgs-indicator badge unread-dot"
+                                      title="${getUnreadMessagesTitle(num_unread)}"
+                                      aria-label="${getUnreadMessagesTitle(num_unread)}"
+                                  ></span>`
+                                : ''}
                             ${last_message_timestamp
                                 ? html`<span class="contact-last-message-time">${last_message_timestamp}</span>`
                                 : ''}

@@ -1,18 +1,48 @@
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import { _converse, api, constants } from '@converse/headless';
-import tplGroup from './group.js';
+import { _converse, api, constants, u } from '@converse/headless';
 import tplRosterFilter from './roster_filter.js';
 import { __ } from 'i18n';
 import {
     shouldShowContact,
-    shouldShowGroup,
     populateContactsMap,
-    groupsComparator,
     contactsComparator,
 } from '../utils.js';
 
 const { CLOSED } = constants;
+const { isUniView } = u;
+
+/**
+ * @param {import('@converse/headless/types/plugins/roster/contact').default} contact
+ */
+function renderContact(contact) {
+    const jid = contact.get('jid');
+    const extra_classes = [];
+    if (isUniView()) {
+        const chatbox = _converse.state.chatboxes.get(jid);
+        if (chatbox && !chatbox.get('hidden')) {
+            extra_classes.push('open');
+        }
+    }
+    const ask = contact.get('ask');
+    const requesting = contact.get('requesting');
+    const subscription = contact.get('subscription');
+    if (ask === 'subscribe' || subscription === 'from') {
+        extra_classes.push('pending-xmpp-contact');
+    } else if (requesting === true) {
+        extra_classes.push('requesting-xmpp-contact');
+    } else if (subscription === 'both' || subscription === 'to' || u.isSameBareJID(jid, api.connection.get().jid)) {
+        extra_classes.push('current-xmpp-contact');
+        extra_classes.push(subscription);
+        extra_classes.push(contact.getStatus());
+    }
+    return html` <li
+        class="list-item d-flex controlbox-padded ${extra_classes.join(' ')}"
+        data-status="${contact.getStatus()}"
+    >
+        <converse-roster-contact .model=${contact}></converse-roster-contact>
+    </li>`;
+}
 
 /**
  * @param {import('../rosterview').default} el
@@ -27,11 +57,28 @@ export default (el) => {
     const roster = [...(state.roster || []), ...(api.settings.get('show_self_in_roster') ? [state.xmppstatus] : [])];
 
     const contacts_map = roster.reduce((acc, contact) => populateContactsMap(acc, contact), {});
-    const groupnames = Object.keys(contacts_map).filter((contact) =>
-        shouldShowGroup(contact, /** @type {any} */ (el.model)),
-    );
     const is_closed = el.model.get('toggle_state') === CLOSED;
-    groupnames.sort(groupsComparator);
+
+    const seen = new Set();
+    const contacts = Object.values(contacts_map)
+        .flat()
+        .filter((contact) => {
+            const jid = contact.get('jid');
+            if (seen.has(jid)) {
+                return false;
+            }
+            seen.add(jid);
+            return true;
+        })
+        .filter((contact) => {
+            const group_name = contact.get('requesting')
+                ? _converse.labels.HEADER_REQUESTING_CONTACTS
+                : contact.get('num_unread')
+                  ? _converse.labels.HEADER_UNREAD
+                  : '';
+            return shouldShowContact(contact, group_name, /** @type {any} */ (el.model));
+        });
+    contacts.sort(contactsComparator);
 
     const i18n_show_filter = __('Show filter');
     const i18n_hide_filter = __('Hide filter');
@@ -151,17 +198,9 @@ export default (el) => {
                       .model=${_converse.state.roster_filter}
                   ></converse-list-filter>`
                 : ''}
-            ${repeat(
-                groupnames,
-                (n) => n,
-                (name) => {
-                    const contacts = contacts_map[name].filter((c) =>
-                        shouldShowContact(c, name, /** @type {any} */ (el.model)),
-                    );
-                    contacts.sort(contactsComparator);
-                    return contacts.length ? tplGroup({ contacts, name }) : '';
-                },
-            )}
+            <ul class="items-list roster-group-contacts" data-group="contacts">
+                ${repeat(contacts, (c) => c.get('jid'), renderContact)}
+            </ul>
         </div>
     `;
 };

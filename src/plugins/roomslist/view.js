@@ -11,6 +11,7 @@ const { CHATROOMS_TYPE, CLOSED, OPENED } = constants;
 
 export class RoomsList extends CustomElement {
     initialize() {
+        this.bound_room_message_listeners = new Set();
         const bare_jid = _converse.session.get('bare_jid');
         const id = `converse.roomspanel${bare_jid}`;
         this.model = new RoomsListModel({ id });
@@ -20,13 +21,14 @@ export class RoomsList extends CustomElement {
         this.model.fetch();
 
         const { chatboxes } = _converse.state;
-        this.listenTo(chatboxes, 'add', this.renderIfChatRoom);
-        this.listenTo(chatboxes, 'remove', this.renderIfChatRoom);
-        this.listenTo(chatboxes, 'destroy', this.renderIfChatRoom);
+        this.listenTo(chatboxes, 'add', (chatbox) => this.onChatBoxAdded(chatbox));
+        this.listenTo(chatboxes, 'remove', (chatbox) => this.onChatBoxRemoved(chatbox));
+        this.listenTo(chatboxes, 'destroy', (chatbox) => this.onChatBoxRemoved(chatbox));
         this.listenTo(chatboxes, 'change', this.renderIfRelevantChange);
         this.listenTo(chatboxes, 'vcard:add', () => this.requestUpdate());
         this.listenTo(chatboxes, 'vcard:change', () => this.requestUpdate());
         this.listenTo(this.model, 'change', () => this.requestUpdate());
+        chatboxes.each((chatbox) => this.bindRoomMessageListeners(chatbox));
 
         this.requestUpdate();
     }
@@ -47,6 +49,40 @@ export class RoomsList extends CustomElement {
         if (u.muc.isChatRoom(model) && Object.keys(changed).filter((m) => attrs.includes(m)).length) {
             this.requestUpdate();
         }
+    }
+
+    /** @param {import('@converse/headless').Model} chatbox */
+    onChatBoxAdded(chatbox) {
+        this.bindRoomMessageListeners(chatbox);
+        this.renderIfChatRoom(chatbox);
+    }
+
+    /** @param {import('@converse/headless').Model} chatbox */
+    onChatBoxRemoved(chatbox) {
+        this.unbindRoomMessageListeners(chatbox);
+        this.renderIfChatRoom(chatbox);
+    }
+
+    /** @param {import('@converse/headless').Model} chatbox */
+    bindRoomMessageListeners(chatbox) {
+        if (!u.muc.isChatRoom(chatbox) || !chatbox.messages) {
+            return;
+        }
+        const jid = chatbox.get('jid');
+        if (!jid || this.bound_room_message_listeners.has(jid)) {
+            return;
+        }
+        this.bound_room_message_listeners.add(jid);
+        this.listenTo(chatbox.messages, 'add change destroy reset remove', () => this.requestUpdate());
+    }
+
+    /** @param {import('@converse/headless').Model} chatbox */
+    unbindRoomMessageListeners(chatbox) {
+        if (!u.muc.isChatRoom(chatbox) || !chatbox.messages) {
+            return;
+        }
+        this.bound_room_message_listeners.delete(chatbox.get('jid'));
+        this.stopListening(chatbox.messages);
     }
 
     /** @returns {import('@converse/headless').MUC[]} */

@@ -3,7 +3,7 @@
  * @typedef {import('@converse/headless').MUC} MUC
  */
 import { html } from "lit";
-import { _converse, api, u, constants } from "@converse/headless";
+import { _converse, api, converse, u, constants } from "@converse/headless";
 import 'plugins/muc-views/modals/add-muc.js';
 import 'plugins/muc-views/modals/muc-list.js';
 import { __ } from 'i18n';
@@ -13,6 +13,7 @@ import '../styles/roomsgroups.scss';
 
 const { CLOSED } = constants;
 const { isUniView } = u;
+const { dayjs } = converse.env;
 
 /** @param {MUC} room */
 function isCurrentlyOpen (room) {
@@ -21,11 +22,88 @@ function isCurrentlyOpen (room) {
 
 /** @param {MUC} room */
 function tplUnreadIndicator (room) {
-    return html`<span class="list-item-badge badge badge--muc msgs-indicator">${ getUnreadMsgsDisplay(room) }</span>`;
+    const unread_count = getUnreadMsgsDisplay(room);
+    return html`<span
+        class="list-item-badge badge badge--muc msgs-indicator unread-dot"
+        title="${getUnreadMessagesTitle(unread_count)}"
+        aria-label="${getUnreadMessagesTitle(unread_count)}"
+    ></span>`;
 }
 
 function tplActivityIndicator () {
-    return html`<span class="list-item-badge badge badge--muc msgs-indicator"></span>`;
+    return html`<span
+        class="list-item-badge badge badge--muc msgs-indicator unread-dot"
+        title="${__('New activity')}"
+        aria-label="${__('New activity')}"
+    ></span>`;
+}
+
+/**
+ * @param {MUC} room
+ */
+function getLastMessage(room) {
+    return room.getMostRecentMessage?.();
+}
+
+/**
+ * @param {string} text
+ */
+function isLikelyURL(text) {
+    return /^https?:\/\//i.test(text);
+}
+
+/**
+ * @param {MUC} room
+ */
+function getLastMessagePreview(room) {
+    const message = getLastMessage(room);
+    const text = message?.getMessageText?.();
+    if (typeof text !== 'string') {
+        return '';
+    }
+    const normalized_text = text.replace(/\s+/g, ' ').trim();
+    if (!normalized_text) {
+        return '';
+    }
+    const is_attachment =
+        Boolean(message.get('file')) ||
+        Boolean(message.get('oob_url')) ||
+        message.get('upload') === 'success' ||
+        (isLikelyURL(normalized_text) && normalized_text.includes('/upload/'));
+
+    const preview_text = is_attachment ? `<${__('Attachment')}>` : normalized_text;
+    return message.get('sender') === 'me' ? `${__('You')}: ${preview_text}` : preview_text;
+}
+
+/**
+ * @param {MUC} room
+ */
+function getLastMessageTimestamp(room) {
+    const message = getLastMessage(room);
+    const timestamp = message?.get('time');
+    if (!timestamp) {
+        return '';
+    }
+    const date = dayjs(timestamp);
+    if (!date.isValid()) {
+        return '';
+    }
+
+    const now = dayjs();
+    if (date.isSame(now, 'day')) {
+        return date.format(api.settings.get('time_format'));
+    }
+    if (date.isSame(now.subtract(1, 'day'), 'day')) {
+        return __('Yesterday');
+    }
+    return date.format('M/D/YYYY');
+}
+
+/**
+ * @param {string|number} num_unread
+ */
+function getUnreadMessagesTitle(num_unread) {
+    return `${num_unread} ${Number(num_unread) === 1 ? __('unread message') : __('unread messages')}`;
 }
 
 /**
@@ -35,6 +113,8 @@ function tplActivityIndicator () {
 function tplRoomItem (el, room) {
     const i18n_leave_room = __('Leave this groupchat');
     const has_unread_msgs = room.get('num_unread_general') || room.get('has_activity');
+    const last_message = getLastMessagePreview(room);
+    const last_message_timestamp = getLastMessageTimestamp(room);
     return html`
         <li class="list-item controlbox-padded available-chatroom d-flex flex-row ${ isCurrentlyOpen(room) ? 'open' : '' } ${ has_unread_msgs ? 'unread-msgs' : '' }"
             data-room-jid="${room.get('jid')}">
@@ -44,16 +124,30 @@ function tplRoomItem (el, room) {
                 data-room-name="${room.getDisplayName()}"
                 title="${__('Click to open this groupchat')}"
                 @click=${ev => el.openRoom(ev)}>
-                <converse-avatar
-                    .model=${room}
-                    class="avatar avatar-muc"
-                    name="${room.getDisplayName()}"
-                    nonce=${room.vcard?.get('vcard_updated')}
-                    height="30" width="30"></converse-avatar>
-                <span>${ room.get('num_unread') ?
-                            tplUnreadIndicator(room) :
-                            (room.get('has_activity') ? tplActivityIndicator() : '') }
-                    ${room.getDisplayName()}</span>
+                <span class="room-row">
+                    <span class="room-avatar-wrapper">
+                        <converse-avatar
+                            .model=${room}
+                            class="avatar avatar-muc"
+                            name="${room.getDisplayName()}"
+                            nonce=${room.vcard?.get('vcard_updated')}
+                            height="30" width="30"></converse-avatar>
+                    </span>
+                    <span class="room-main ${has_unread_msgs ? 'unread-msgs' : ''}">
+                        <span class="room-main__top">
+                            <span class="room-name">${room.getDisplayName()}</span>
+                            <span class="room-main__meta">
+                                ${ room.get('num_unread') ?
+                                    tplUnreadIndicator(room) :
+                                    (room.get('has_activity') ? tplActivityIndicator() : '') }
+                                ${last_message_timestamp
+                                    ? html`<span class="room-last-message-time">${last_message_timestamp}</span>`
+                                    : ''}
+                            </span>
+                        </span>
+                        ${last_message ? html`<span class="room-last-message">${last_message}</span>` : ''}
+                    </span>
+                </span>
             </a>
 
             <a class="list-item-action close-room"
