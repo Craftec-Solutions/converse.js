@@ -30,6 +30,24 @@ export default class RosterContactView extends ObservableElement {
         this.listenTo(this.model, 'vcard:add', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:change', () => this.requestUpdate());
         this.listenTo(this.model, 'presence:change', () => this.requestUpdate());
+
+        this.onConverseMessage = (data) => {
+            const jid = this.model?.get?.('jid');
+            if (!jid) {
+                return;
+            }
+            if (data?.attrs?.contact_jid === jid || data?.chatbox?.get?.('jid') === jid) {
+                this.requestUpdate();
+            }
+        };
+        this.onAfterMessagesFetched = (chatbox) => {
+            if (chatbox?.get?.('jid') === this.model?.get?.('jid')) {
+                this.requestUpdate();
+            }
+        };
+        api.listen.on('message', this.onConverseMessage);
+        api.listen.on('afterMessagesFetched', this.onAfterMessagesFetched);
+
         const { chatboxes } = _converse.state;
         if (chatboxes) {
             this.listenTo(chatboxes, 'add', (chatbox) => this.onChatBoxAdded(chatbox));
@@ -37,6 +55,12 @@ export default class RosterContactView extends ObservableElement {
             this.listenTo(chatboxes, 'destroy', (chatbox) => this.onChatBoxRemoved(chatbox));
             this.bindChatBoxListeners();
         }
+    }
+
+    disconnectedCallback() {
+        api.listen.off('message', this.onConverseMessage);
+        api.listen.off('afterMessagesFetched', this.onAfterMessagesFetched);
+        super.disconnectedCallback();
     }
 
     getChatBox() {
