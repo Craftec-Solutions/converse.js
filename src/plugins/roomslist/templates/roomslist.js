@@ -218,7 +218,11 @@ function tplRoomDomainGroupList (el, rooms) {
  */
 export default (el) => {
     const group_by_domain = api.settings.get('muc_grouped_by_domain');
-    const rooms = el.getRoomsToShow();
+    const all_rooms = el.getRoomsToShow();
+    const search_query = (el.closest('converse-controlbox')?.search_query ?? '').trim().toLowerCase();
+    const rooms = search_query
+        ? all_rooms.filter((room) => (room.getDisplayName()?.toLowerCase() ?? '').includes(search_query))
+        : all_rooms;
     const i18n_desc_rooms = __('Click to toggle the list of open group chats');
     const i18n_heading_chatrooms = __('Group chats');
     const i18n_title_list_rooms = __('View group chats');
@@ -265,7 +269,7 @@ export default (el) => {
 
                     ${i18n_heading_chatrooms}
 
-                    ${rooms.length ? html`<converse-icon
+                    ${all_rooms.length ? html`<converse-icon
                         class="fa ${ is_closed ? 'fa-caret-right' : 'fa-caret-down' }"
                         size="1em"
                         color="var(--muc-color)"></converse-icon>` : '' }
@@ -274,7 +278,7 @@ export default (el) => {
             <converse-dropdown class="btn-group dropstart" .icon_size=${'0.82em'} .items=${btns}></converse-dropdown>
         </div>
 
-        <div class="list-container list-container--openrooms ${ rooms.length ? '' : 'hidden' }">
+        <div class="list-container list-container--openrooms ${ all_rooms.length ? '' : 'hidden' }">
             <ul class="items-list rooms-list open-rooms-list ${ is_closed ? 'collapsed' : '' }">
                 ${ group_by_domain ?
                     tplRoomDomainGroupList(el, rooms) :

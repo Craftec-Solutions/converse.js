@@ -16,6 +16,7 @@ const { LOGOUT } = constants;
  */
 class ControlBoxView extends DragResizable(CustomElement) {
     initialize() {
+        this.search_query = '';
         this.setModel();
         const { chatboxviews } = _converse.state;
         chatboxviews.add('controlbox', this);
@@ -59,6 +60,32 @@ class ControlBoxView extends DragResizable(CustomElement) {
             return this.model && !this.model.get('closed') ? tplControlbox(this) : '';
         }
         return tplControlbox(this);
+    }
+
+    /** @param {InputEvent} ev */
+    onUnifiedSearchInput(ev) {
+        const target = /** @type {HTMLInputElement | null} */ (ev.target);
+        const value = target?.value ?? '';
+        if (value === this.search_query) {
+            return;
+        }
+        this.search_query = value;
+        this.requestUpdate();
+        this.querySelector('converse-rooms-list')?.requestUpdate();
+        this.querySelector('converse-roster')?.requestUpdate();
+    }
+
+    /** @param {MouseEvent} ev */
+    clearUnifiedSearch(ev) {
+        ev?.preventDefault?.();
+        if (!this.search_query) {
+            return;
+        }
+        this.search_query = '';
+        this.requestUpdate();
+        this.querySelector('converse-rooms-list')?.requestUpdate();
+        this.querySelector('converse-roster')?.requestUpdate();
+        /** @type {HTMLInputElement | null} */ (this.querySelector('.tfx-unified-chat-search__input'))?.focus();
     }
 
     close(ev) {

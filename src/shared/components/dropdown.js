@@ -25,7 +25,7 @@ export default class Dropdown extends DropdownBase {
     constructor() {
         super();
         this.icon_classes = "fa fa-ellipsis-v";
-        this.icon_size = "1em";
+        this.icon_size = "0.82em";
         this.items = [];
         this.id = u.getUniqueId();
     }

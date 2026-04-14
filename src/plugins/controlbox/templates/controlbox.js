@@ -1,6 +1,7 @@
 import { html, nothing } from 'lit';
 import { _converse, api, converse, constants } from '@converse/headless';
 import { getChatStyle } from 'shared/chat/utils.js';
+import { __ } from 'i18n';
 
 const { Strophe } = converse.env;
 const { ANONYMOUS } = constants;
@@ -45,6 +46,27 @@ export default (el) => {
         ${api.settings.get('view_mode') === 'overlayed' ? html`<converse-dragresize></converse-dragresize>` : ''}
         ${el.model.get('connected')
             ? html`<converse-user-profile></converse-user-profile>
+                  <div class="controlbox-padded tfx-unified-chat-search">
+                      <div class="tfx-unified-chat-search__field">
+                          <input
+                              class="form-control tfx-unified-chat-search__input"
+                              type="text"
+                              placeholder="${__('Search people and group chats...')}"
+                              .value=${el.search_query ?? ''}
+                              @input=${(ev) => el.onUnifiedSearchInput(ev)}
+                          />
+                          ${el.search_query
+                              ? html`<button
+                                    type="button"
+                                    class="tfx-unified-chat-search__clear"
+                                    title="${__('Clear search')}"
+                                    @click=${(ev) => el.clearUnifiedSearch(ev)}
+                                >
+                                    <converse-icon class="fa fa-times" size="0.88em"></converse-icon>
+                                </button>`
+                              : ''}
+                      </div>
+                  </div>
                   <div class="controlbox-pane">
                       <converse-headlines-feeds-list class="controlbox-section"></converse-headlines-feeds-list>
                       <div id="chatrooms" class="controlbox-section"><converse-rooms-list></converse-rooms-list></div>

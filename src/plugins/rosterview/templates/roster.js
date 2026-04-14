@@ -1,7 +1,6 @@
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { _converse, api, constants, u } from '@converse/headless';
-import tplRosterFilter from './roster_filter.js';
 import { __ } from 'i18n';
 import {
     shouldShowContact,
@@ -53,6 +52,7 @@ export default (el) => {
     const i18n_title_add_contact = __('Add a contact');
     const i18n_title_new_chat = __('Start a new chat');
     const i18n_show_blocklist = __('Show block list');
+    const search_query = (el.closest('converse-controlbox')?.search_query ?? '').trim().toLowerCase();
     const { state } = _converse;
     const roster = [...(state.roster || []), ...(api.settings.get('show_self_in_roster') ? [state.xmppstatus] : [])];
 
@@ -60,7 +60,7 @@ export default (el) => {
     const is_closed = el.model.get('toggle_state') === CLOSED;
 
     const seen = new Set();
-    const contacts = Object.values(contacts_map)
+    let contacts = Object.values(contacts_map)
         .flat()
         .filter((contact) => {
             const jid = contact.get('jid');
@@ -78,11 +78,13 @@ export default (el) => {
                   : '';
             return shouldShowContact(contact, group_name, /** @type {any} */ (el.model));
         });
+    if (search_query) {
+        contacts = contacts.filter((contact) => {
+            const name = contact.getDisplayName({ context: 'roster' }) ?? '';
+            return name.toLowerCase().includes(search_query);
+        });
+    }
     contacts.sort(contactsComparator);
-
-    const i18n_show_filter = __('Show filter');
-    const i18n_hide_filter = __('Hide filter');
-    const is_filter_visible = el.model.get('filter_visible');
 
     const btns = /** @type {TemplateResult[]} */ [];
     if (api.settings.get('allow_contact_requests')) {
@@ -132,20 +134,6 @@ export default (el) => {
         </a>
     `);
 
-    if (roster.length > 5) {
-        btns.push(html`
-            <a
-                href="#"
-                class="dropdown-item toggle-filter"
-                role="button"
-                @click="${(/** @type {MouseEvent} */ ev) => el.toggleFilter(ev)}"
-            >
-                <converse-icon size="1em" class="fa fa-filter"></converse-icon>
-                ${is_filter_visible ? i18n_hide_filter : i18n_show_filter}
-            </a>
-        `);
-    }
-
     if (api.settings.get('loglevel') === 'debug') {
         const i18n_title_sync_contacts = __('Re-sync contacts');
         btns.push(html`
@@ -190,15 +178,6 @@ export default (el) => {
         </div>
 
         <div class="list-container roster-contacts ${is_closed ? 'hidden' : ''}">
-            ${is_filter_visible
-                ? html`<converse-list-filter
-                      @update=${() => el.requestUpdate()}
-                      .promise=${api.waitUntil('rosterInitialized')}
-                      .items=${_converse.state.roster}
-                      .template=${tplRosterFilter}
-                      .model=${_converse.state.roster_filter}
-                  ></converse-list-filter>`
-                : ''}
             <ul class="items-list roster-group-contacts" data-group="contacts">
                 ${repeat(contacts, (c) => c.get('jid'), renderContact)}
             </ul>
