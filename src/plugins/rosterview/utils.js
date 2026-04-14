@@ -282,22 +282,36 @@ export function populateContactsMap(contacts_map, contact) {
  * @returns {(-1|0|1)}
  */
 export function contactsComparator(contact1, contact2) {
+    const chatbox1 = _converse.state.chatboxes.get(contact1.get('jid'));
+    const chatbox2 = _converse.state.chatboxes.get(contact2.get('jid'));
+    const message1 = chatbox1?.getMostRecentMessage?.();
+    const message2 = chatbox2?.getMostRecentMessage?.();
+    const has_message1 = Boolean(message1);
+    const has_message2 = Boolean(message2);
+
+    // First prioritize contacts with at least one message over those without any message.
+    if (has_message1 !== has_message2) {
+        return has_message1 ? -1 : 1;
+    }
+
     const status1 = contact1.getStatus();
     const status2 = contact2.getStatus();
-    if (STATUS_WEIGHTS[status1] === STATUS_WEIGHTS[status2]) {
-        const chatbox1 = _converse.state.chatboxes.get(contact1.get('jid'));
-        const chatbox2 = _converse.state.chatboxes.get(contact2.get('jid'));
-        const time1 = Date.parse(chatbox1?.getMostRecentMessage?.()?.get('time')) || 0;
-        const time2 = Date.parse(chatbox2?.getMostRecentMessage?.()?.get('time')) || 0;
+    if (STATUS_WEIGHTS[status1] !== STATUS_WEIGHTS[status2]) {
+        return STATUS_WEIGHTS[status1] < STATUS_WEIGHTS[status2] ? -1 : 1;
+    }
+
+    // Within the same status (and only when both have messages), sort by most recent message.
+    if (has_message1 && has_message2) {
+        const time1 = Date.parse(message1?.get('time')) || 0;
+        const time2 = Date.parse(message2?.get('time')) || 0;
         if (time1 !== time2) {
             return time1 < time2 ? 1 : -1;
         }
-        const name1 = contact1.getDisplayName().toLowerCase();
-        const name2 = contact2.getDisplayName().toLowerCase();
-        return name1 < name2 ? -1 : name1 > name2 ? 1 : 0;
-    } else {
-        return STATUS_WEIGHTS[status1] < STATUS_WEIGHTS[status2] ? -1 : 1;
     }
+
+    const name1 = contact1.getDisplayName().toLowerCase();
+    const name2 = contact2.getDisplayName().toLowerCase();
+    return name1 < name2 ? -1 : name1 > name2 ? 1 : 0;
 }
 
 /**
