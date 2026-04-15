@@ -124,6 +124,17 @@ export default class MUCHeading extends CustomElement {
             'name': 'details'
         });
 
+        if (window.manageGroupChat) {
+            buttons.push({
+                'i18n_text': __('Manage'),
+                'i18n_title': __('Manage this groupchat'),
+                'handler': () => window.manageGroupChat(this.model.id),
+                'a_class': 'manage-group-chat-button',
+                'icon_class': 'fa-cog',
+                'name': 'manage'
+            });
+        }
+
         if (this.model.getOwnAffiliation() === 'owner') {
             buttons.push({
                 'i18n_text': __('Configure'),
@@ -196,7 +207,7 @@ export default class MUCHeading extends CustomElement {
             buttons.push({
                 'i18n_text': __('Leave'),
                 'i18n_title': __('Leave and close this groupchat'),
-                'handler': async (ev) => {
+                'handler': (ev) => {
                     ev.stopPropagation();
                     window.leaveGroupChat(this.model.id).result.then(() => {
                       this.close(ev);
