@@ -58,8 +58,8 @@ export default class RosterContactView extends ObservableElement {
     }
 
     disconnectedCallback() {
-        api.listen.off('message', this.onConverseMessage);
-        api.listen.off('afterMessagesFetched', this.onAfterMessagesFetched);
+        api.listen.not('message', this.onConverseMessage);
+        api.listen.not('afterMessagesFetched', this.onAfterMessagesFetched);
         super.disconnectedCallback();
     }
 
