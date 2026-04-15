@@ -124,7 +124,7 @@ export default class MUCHeading extends CustomElement {
             'name': 'details'
         });
 
-        if (window.manageGroupChat) {
+        if (window.manageGroupChat && this.model.getOwnAffiliation() === 'owner') {
             buttons.push({
                 'i18n_text': __('Manage'),
                 'i18n_title': __('Manage this groupchat'),
