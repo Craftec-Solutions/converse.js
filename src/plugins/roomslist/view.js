@@ -87,10 +87,36 @@ export class RoomsList extends CustomElement {
 
     /** @returns {import('@converse/headless').MUC[]} */
     getRoomsToShow() {
-        const { chatboxes } = _converse.state;
-        const rooms = chatboxes.filter((m) => m.get('type') === CHATROOMS_TYPE && !m.get('closed'));
-        rooms.sort((a, b) => (a.getDisplayName().toLowerCase() <= b.getDisplayName().toLowerCase() ? -1 : 1));
-        return rooms;
+      const { chatboxes } = _converse.state;
+      const rooms = chatboxes.filter((m) => m.get('type') === CHATROOMS_TYPE && !m.get('closed'));
+
+      rooms.sort((a, b) => {
+        const msg_a = a.getMostRecentMessage?.();
+        const msg_b = b.getMostRecentMessage?.();
+        const has_msg_a = Boolean(msg_a);
+        const has_msg_b = Boolean(msg_b);
+
+        // Rooms with at least one message sort before rooms without
+        if (has_msg_a !== has_msg_b) {
+          return has_msg_a ? -1 : 1;
+        }
+
+        // Among rooms with messages, sort by most recent message timestamp descending
+        if (has_msg_a && has_msg_b) {
+          const time_a = Date.parse(msg_a.get('time')) || 0;
+          const time_b = Date.parse(msg_b.get('time')) || 0;
+          if (time_a !== time_b) {
+            return time_a < time_b ? 1 : -1;
+          }
+        }
+
+        // Fall back to alphabetical
+        const name_a = a.getDisplayName().toLowerCase();
+        const name_b = b.getDisplayName().toLowerCase();
+        return name_a < name_b ? -1 : name_a > name_b ? 1 : 0;
+      });
+
+      return rooms;
     }
 
     /** @param {Event} ev */
