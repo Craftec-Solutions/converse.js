@@ -52,7 +52,8 @@ export default class Profile extends ModelWithVCard(ColorAwareModel(Model)) {
     initialize() {
         super.initialize();
         this.on('change', (item) => {
-            if (item.changed?.status || item.changed?.status_message || item.changed?.show) {
+            const changed = item.changed || {};
+            if ('status' in changed || 'status_message' in changed || 'show' in changed) {
                 api.user.presence.send({
                     show: this.get('show'),
                     status: this.get('status_message'),
