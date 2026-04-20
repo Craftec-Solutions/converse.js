@@ -75,9 +75,6 @@ export default (el) => {
         <ul class="occupant-details">
             ${el.model
                 ? html` ${nick ? html`<li class="occupant-details-nickname">${nick}</li>` : ''}
-                      <li class="occupant-details-jid">
-                          ${jid ? html`<a @click="${() => el.openChat(jid)}">${jid}</a>` : ''}
-                      </li>
                       <li>
                           ${affiliation && affiliation !== 'None'
                               ? html`<span class="badge text-bg-primary">${affiliation}</span>`

@@ -89,11 +89,25 @@ export default (el) => {
         );
     }
 
+    const dedupedOccupants = (() => {
+      const seen = new Map();
+      for (const occ of el.model.occupants.models) {
+        const jid = occ.get('jid');
+        if (!jid) continue;
+        const bareJid = jid.split('/')[0];
+        const existing = seen.get(bareJid);
+        if (!existing || occ.get('presence') === 'online') {
+          seen.set(bareJid, occ);
+        }
+      }
+      return [...seen.values()];
+    })();
+
     return html`
         <div class="occupants">
             <div class="occupants-header">
                 <div class="occupants-header--title">
-                    <span class="occupants-heading sidebar-heading">${el.model.occupants.length} ${i18n_participants}</span>
+                    <span class="occupants-heading sidebar-heading">${dedupedOccupants.length} ${i18n_participants}</span>
                     ${btns.length === 1
                         ? btns[0]
                             : html`<converse-dropdown
@@ -112,7 +126,7 @@ export default (el) => {
                     ></converse-list-filter>`
                     : ''}
                 ${repeat(
-                    el.model.occupants.models,
+                    dedupedOccupants,
                     (occ) => occ.get('jid'),
                     (occ) => isOccupantFiltered(el, occ) ? '' : html`<converse-muc-occupant-list-item .muc="${el.model}" .model="${occ}" />`
                 )}

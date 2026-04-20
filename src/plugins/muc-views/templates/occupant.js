@@ -94,15 +94,14 @@ function getOccupantTitle(o) {
     const i18n_moderator_hint = __('This user is a moderator.');
     const i18n_participant_hint = __('This user can send messages in this groupchat.');
     const i18n_visitor_hint = __('This user can NOT send messages in this groupchat.');
-    const spaced_jid = o.get('jid') ? `${o.get('jid')} ` : '';
     if (role === 'moderator') {
-        return `${spaced_jid}${i18n_moderator_hint} ${hint_occupant}`;
+        return `${i18n_moderator_hint} ${hint_occupant}`;
     } else if (role === 'participant') {
-        return `${spaced_jid}${i18n_participant_hint} ${hint_occupant}`;
+        return `${i18n_participant_hint} ${hint_occupant}`;
     } else if (role === 'visitor') {
-        return `${spaced_jid}${i18n_visitor_hint} ${hint_occupant}`;
+        return `${i18n_visitor_hint} ${hint_occupant}`;
     } else if (!['visitor', 'participant', 'moderator'].includes(role)) {
-        return `${spaced_jid}${hint_occupant}`;
+        return `${hint_occupant}`;
     }
 }
 
