@@ -149,6 +149,9 @@ async function tplActionButtons(o) {
  */
 export default (el) => {
     const o = el.model;
+    const roster_contact = o.getRosterContact?.();
+    const has_occupant_avatar = !!(o.vcard?.get('image_type') && o.vcard?.get('image'));
+    const avatar_model = has_occupant_avatar ? o : roster_contact || o;
     const { show, presence, affiliation } = el.model.attributes;
     const hint_show = PRETTY_CHAT_STATUS[show || presence];
     const role = o.get('role');
@@ -171,10 +174,10 @@ export default (el) => {
                 <div class="row g-0">
                     <div class="col-auto">
                         <converse-avatar
-                            .model=${o}
+                            .model=${avatar_model}
                             class="avatar chat-msg__avatar"
                             name="${o.getDisplayName()}"
-                            nonce=${o.vcard?.get('vcard_updated')}
+                            nonce=${avatar_model.vcard?.get('vcard_updated')}
                             height="30"
                             width="30"
                         ></converse-avatar>

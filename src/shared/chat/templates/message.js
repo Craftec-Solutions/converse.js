@@ -41,7 +41,14 @@ export default (el) => {
 
     // The model to use for the avatar.
     // Note: it can happen that the contact has not the vcard attribute but the message has.
-    const avatar_model = contact?.vcard ? contact : el.model;
+    let avatar_model = contact?.vcard ? contact : el.model;
+    if (contact?.getRosterContact) {
+        const has_contact_avatar = !!(contact.vcard?.get('image_type') && contact.vcard?.get('image'));
+        const roster_contact = contact.getRosterContact();
+        if (!has_contact_avatar && roster_contact?.vcard) {
+            avatar_model = roster_contact;
+        }
+    }
 
     return html`${is_first_unread
             ? html`<div class="message separator">

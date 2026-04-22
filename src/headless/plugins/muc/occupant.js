@@ -135,7 +135,54 @@ class MUCOccupant extends ModelWithVCard(ModelWithMessages(ColorAwareModel(Model
      * @returns {string}
      */
     getDisplayName() {
-        return this.get('nick') || this.get('jid') || '';
+        const nick = this.get('nick')?.trim();
+        if (nick) {
+            return nick;
+        }
+
+        const roster_contact = this.getRosterContact();
+        const roster_name = roster_contact?.getDisplayName({ no_jid: true })?.trim();
+        if (roster_name) {
+            return roster_name;
+        }
+
+        const fullname = this.vcard?.get('fullname')?.trim();
+        if (fullname) {
+            return fullname;
+        }
+
+        const jid = this.get('jid') || '';
+        const jid_node = jid && Strophe.getNodeFromJid(jid);
+        return jid_node ? Strophe.unescapeNode(jid_node) : jid;
+    }
+
+    getRosterContact() {
+        const roster = _converse.state.roster;
+        if (!roster) {
+            return null;
+        }
+
+        const jid = Strophe.getBareJidFromJid(this.get('jid') || '');
+        if (jid) {
+            const contact = roster.get(jid);
+            if (contact) {
+                return contact;
+            }
+        }
+
+        const nick = (this.get('nick') || Strophe.getResourceFromJid(this.get('from') || ''))?.trim();
+        if (!nick) {
+            return null;
+        }
+        const escaped_nick = Strophe.escapeNode(nick);
+
+        return (
+            roster.find((contact) => {
+                const contact_jid = contact.get('jid');
+                const node = contact_jid && Strophe.getNodeFromJid(contact_jid);
+                return !!node && [nick, escaped_nick].includes(node);
+            }) || null
+        );
     }
 
     /**
