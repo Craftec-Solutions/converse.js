@@ -52,7 +52,10 @@ export default (el) => {
     const i18n_title_add_contact = __('Add a contact');
     const i18n_title_new_chat = __('Start a new chat');
     const i18n_show_blocklist = __('Show block list');
-    const search_query = (el.closest('converse-controlbox')?.search_query ?? '').trim().toLowerCase();
+    const controlbox = el.closest('converse-controlbox');
+    const search_query = (controlbox?.search_query ?? '').trim().toLowerCase();
+    const should_only_show_contacts_with_last_message = Boolean(window.isConverseContactsWithLastMessageOnlyEnabled);
+    const should_show_all_contacts = Boolean(controlbox?.is_unified_search_focused || search_query);
     const { state } = _converse;
     const roster = [...(state.roster || []), ...(api.settings.get('show_self_in_roster') ? [state.xmppstatus] : [])];
 
@@ -78,6 +81,9 @@ export default (el) => {
                   : '';
             return shouldShowContact(contact, group_name, /** @type {any} */ (el.model));
         });
+    if (should_only_show_contacts_with_last_message && !should_show_all_contacts) {
+        contacts = contacts.filter((contact) => Boolean(_converse.state.chatboxes.get(contact.get('jid'))?.getMostRecentMessage?.()));
+    }
     if (search_query) {
         contacts = contacts.filter((contact) => {
             const name = contact.getDisplayName({ context: 'roster' }) ?? '';

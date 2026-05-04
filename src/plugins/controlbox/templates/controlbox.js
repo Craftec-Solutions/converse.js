@@ -53,6 +53,8 @@ export default (el) => {
                               type="text"
                               placeholder="${__('Search people and group chats...')}"
                               .value=${el.search_query ?? ''}
+                              @focus=${() => el.onUnifiedSearchFocus()}
+                              @blur=${() => el.onUnifiedSearchBlur()}
                               @input=${(ev) => el.onUnifiedSearchInput(ev)}
                           />
                           ${el.search_query

@@ -17,6 +17,7 @@ const { LOGOUT } = constants;
 class ControlBoxView extends DragResizable(CustomElement) {
     initialize() {
         this.search_query = '';
+        this.is_unified_search_focused = false;
         this.setModel();
         const { chatboxviews } = _converse.state;
         chatboxviews.add('controlbox', this);
@@ -72,6 +73,22 @@ class ControlBoxView extends DragResizable(CustomElement) {
         this.search_query = value;
         this.requestUpdate();
         this.querySelector('converse-rooms-list')?.requestUpdate();
+        this.querySelector('converse-roster')?.requestUpdate();
+    }
+
+    onUnifiedSearchFocus() {
+        if (this.is_unified_search_focused) {
+            return;
+        }
+        this.is_unified_search_focused = true;
+        this.querySelector('converse-roster')?.requestUpdate();
+    }
+
+    onUnifiedSearchBlur() {
+        if (!this.is_unified_search_focused) {
+            return;
+        }
+        this.is_unified_search_focused = false;
         this.querySelector('converse-roster')?.requestUpdate();
     }
 
