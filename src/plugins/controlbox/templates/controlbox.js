@@ -53,16 +53,15 @@ export default (el) => {
                               type="text"
                               placeholder="${__('Search people and group chats...')}"
                               .value=${el.search_query ?? ''}
-                              @focus=${() => el.onUnifiedSearchFocus()}
-                              @blur=${() => el.onUnifiedSearchBlur()}
+                              @click=${() => el.enterUnifiedSearchMode()}
                               @input=${(ev) => el.onUnifiedSearchInput(ev)}
                           />
-                          ${el.search_query
+                          ${el.is_unified_search_mode
                               ? html`<button
                                     type="button"
                                     class="tfx-unified-chat-search__clear"
-                                    title="${__('Clear search')}"
-                                    @click=${(ev) => el.clearUnifiedSearch(ev)}
+                                    title="${__('Close search')}"
+                                    @click=${(ev) => el.exitUnifiedSearchMode(ev)}
                                 >
                                     <converse-icon class="fa fa-times" size="0.88em"></converse-icon>
                                 </button>`

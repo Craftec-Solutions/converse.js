@@ -17,7 +17,7 @@ const { LOGOUT } = constants;
 class ControlBoxView extends DragResizable(CustomElement) {
     initialize() {
         this.search_query = '';
-        this.is_unified_search_focused = false;
+        this.is_unified_search_mode = false;
         this.setModel();
         const { chatboxviews } = _converse.state;
         chatboxviews.add('controlbox', this);
@@ -76,33 +76,26 @@ class ControlBoxView extends DragResizable(CustomElement) {
         this.querySelector('converse-roster')?.requestUpdate();
     }
 
-    onUnifiedSearchFocus() {
-        if (this.is_unified_search_focused) {
+    enterUnifiedSearchMode() {
+        if (this.is_unified_search_mode) {
             return;
         }
-        this.is_unified_search_focused = true;
-        this.querySelector('converse-roster')?.requestUpdate();
-    }
-
-    onUnifiedSearchBlur() {
-        if (!this.is_unified_search_focused) {
-            return;
-        }
-        this.is_unified_search_focused = false;
+        this.is_unified_search_mode = true;
+        this.requestUpdate();
         this.querySelector('converse-roster')?.requestUpdate();
     }
 
     /** @param {MouseEvent} ev */
-    clearUnifiedSearch(ev) {
+    exitUnifiedSearchMode(ev) {
         ev?.preventDefault?.();
-        if (!this.search_query) {
+        if (!this.is_unified_search_mode && !this.search_query) {
             return;
         }
+        this.is_unified_search_mode = false;
         this.search_query = '';
         this.requestUpdate();
         this.querySelector('converse-rooms-list')?.requestUpdate();
         this.querySelector('converse-roster')?.requestUpdate();
-        /** @type {HTMLInputElement | null} */ (this.querySelector('.tfx-unified-chat-search__input'))?.focus();
     }
 
     close(ev) {

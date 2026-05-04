@@ -55,7 +55,7 @@ export default (el) => {
     const controlbox = el.closest('converse-controlbox');
     const search_query = (controlbox?.search_query ?? '').trim().toLowerCase();
     const should_only_show_contacts_with_last_message = Boolean(window.isConverseContactsWithLastMessageOnlyEnabled);
-    const should_show_all_contacts = Boolean(controlbox?.is_unified_search_focused || search_query);
+    const should_show_all_contacts = Boolean(controlbox?.is_unified_search_mode || search_query);
     const { state } = _converse;
     const roster = [...(state.roster || []), ...(api.settings.get('show_self_in_roster') ? [state.xmppstatus] : [])];
 
