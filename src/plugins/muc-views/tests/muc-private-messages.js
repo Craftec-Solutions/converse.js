@@ -2,8 +2,6 @@
 const { stx, u } = converse.env;
 
 describe('MUC Private Messages', () => {
-    beforeAll(() => jasmine.addMatchers({ toEqualStanza: jasmine.toEqualStanza }));
-
     it(
         'cannot be sent when the intended recipient is not in the MUC',
         mock.initConverse(['chatBoxesFetched'], { view_mode: 'fullscreen' }, async (_converse) => {
@@ -23,11 +21,15 @@ describe('MUC Private Messages', () => {
             const view = _converse.chatboxviews.get(muc_jid);
             await u.waitUntil(() => view.model.occupants.length === 2);
 
+            if (view.model.get('hidden_occupants')) {
+                // Happens in headless chrome due to smaller viewport size
+                view.model.save('hidden_occupants', false);
+            }
             const avatar_el = await u.waitUntil(() =>
-                view.querySelector('.occupant-list converse-avatar[name="firstwitch"]'),
+                view.querySelector('.occupant-list converse-avatar[name="firstwitch"]')
             );
             avatar_el.click();
-        }),
+        })
     );
 
     describe('When receiving a MUC private message', () => {
@@ -49,7 +51,7 @@ describe('MUC Private Messages', () => {
                         <x xmlns="http://jabber.org/protocol/muc#user">
                             <item affiliation="owner" role="moderator"/>
                         </x>
-                        </presence>`),
+                        </presence>`)
                 );
                 await u.waitUntil(() => view.model.occupants.length === 2);
 
@@ -63,7 +65,7 @@ describe('MUC Private Messages', () => {
                             <body>I'll give thee a wind.</body>
                             <x xmlns="http://jabber.org/protocol/muc#user" />
                         </message>
-                    `),
+                    `)
                 );
 
                 _converse.api.connection.get()._dataRecv(
@@ -75,7 +77,7 @@ describe('MUC Private Messages', () => {
                                 xmlns="jabber:client">
                             <body>Harpier cries: "tis time, "tis time.</body>
                         </message>
-                    `),
+                    `)
                 );
 
                 await u.waitUntil(() => view.querySelectorAll('.chat-msg').length === 1);
@@ -87,7 +89,7 @@ describe('MUC Private Messages', () => {
                 expect(occupant.get('num_unread')).toBe(1);
                 expect(occupant.messages.length).toBe(1);
                 expect(occupant.messages.pop().get('message')).toBe("I'll give thee a wind.");
-            }),
+            })
         );
     });
 
@@ -111,8 +113,12 @@ describe('MUC Private Messages', () => {
                             <x xmlns="http://jabber.org/protocol/muc#user">
                                 <item affiliation="owner" role="moderator"/>
                             </x>
-                            </presence>`),
+                            </presence>`)
                 );
+                if (view.model.get('hidden_occupants')) {
+                    // Happens in headless chrome due to smaller viewport size
+                    view.model.save('hidden_occupants', false);
+                }
                 await u.waitUntil(() => view.querySelectorAll('.occupant-list converse-avatar').length === 2);
 
                 // Open the occupant view in the sidebar
@@ -125,7 +131,7 @@ describe('MUC Private Messages', () => {
                 button.click();
 
                 await u.waitUntil(
-                    () => api.connection.get().sent_stanzas.filter((s) => s.nodeName === 'message').length,
+                    () => api.connection.get().sent_stanzas.filter((s) => s.nodeName === 'message').length
                 );
 
                 const sent_stanza = api.connection.get().sent_stanzas.pop();
@@ -141,7 +147,7 @@ describe('MUC Private Messages', () => {
                         <origin-id xmlns="urn:xmpp:sid:0" id="${sent_stanza.querySelector('origin-id')?.getAttribute('id')}"/>
                         <x xmlns="http://jabber.org/protocol/muc#user"/>
                     </message>`);
-            }),
+            })
         );
 
         it(
@@ -163,8 +169,12 @@ describe('MUC Private Messages', () => {
                             <x xmlns="http://jabber.org/protocol/muc#user">
                                 <item affiliation="owner" role="moderator"/>
                             </x>
-                            </presence>`),
+                            </presence>`)
                 );
+                if (view.model.get('hidden_occupants')) {
+                    // Happens in headless chrome due to smaller viewport size
+                    view.model.save('hidden_occupants', false);
+                }
                 await u.waitUntil(() => view.querySelectorAll('.occupant-list converse-avatar').length === 2);
 
                 // Open the occupant view in the sidebar
@@ -174,14 +184,14 @@ describe('MUC Private Messages', () => {
                 occupant.sendMessage({ body: 'hello world' });
 
                 await u.waitUntil(
-                    () => api.connection.get().sent_stanzas.filter((s) => s.nodeName === 'message').length,
+                    () => api.connection.get().sent_stanzas.filter((s) => s.nodeName === 'message').length
                 );
 
                 const avatar = view.querySelector('converse-muc-occupant converse-chat-message converse-avatar');
                 expect(avatar).toBeDefined();
                 expect(avatar.getAttribute('name')).toBe('romeo');
                 expect(avatar.model).toBe(view.model.getOccupant('romeo'));
-            }),
+            })
         );
 
         describe('And an error is returned', () => {
@@ -204,8 +214,12 @@ describe('MUC Private Messages', () => {
                             <x xmlns="http://jabber.org/protocol/muc#user">
                                 <item affiliation="owner" role="moderator"/>
                             </x>
-                            </presence>`),
+                            </presence>`)
                     );
+                    if (view.model.get('hidden_occupants')) {
+                        // Happens in headless chrome due to smaller viewport size
+                        view.model.save('hidden_occupants', false);
+                    }
                     await u.waitUntil(() => view.querySelectorAll('.occupant-list converse-avatar').length === 2);
 
                     // Open the occupant view in the sidebar
@@ -215,7 +229,7 @@ describe('MUC Private Messages', () => {
                     occupant.sendMessage({ body: 'hello world' });
 
                     await u.waitUntil(
-                        () => api.connection.get().sent_stanzas.filter((s) => s.nodeName === 'message').length,
+                        () => api.connection.get().sent_stanzas.filter((s) => s.nodeName === 'message').length
                     );
                     const sent_stanza = api.connection.get().sent_stanzas.pop();
 
@@ -232,13 +246,13 @@ describe('MUC Private Messages', () => {
                                 <item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
                                 <text xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">${err_msg_text}</text>
                             </error>
-                        </message>`),
+                        </message>`)
                     );
 
                     expect(await u.waitUntil(() => view.querySelector('.chat-msg__error')?.textContent?.trim())).toBe(
-                        `Message delivery failed.\n${err_msg_text}`,
+                        `Message delivery failed.\n${err_msg_text}`
                     );
-                }),
+                })
             );
         });
     });

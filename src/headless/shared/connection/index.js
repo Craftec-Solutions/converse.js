@@ -31,13 +31,13 @@ export class Connection extends Strophe.Connection {
     }
 
     /** @param {Element} body */
-    xmlInput (body) {
-        log.debug(body.outerHTML, 'color: darkgoldenrod');
+    xmlInput(body) {
+        log.debug('%c%s', 'color: darkgoldenrod', body.outerHTML);
     }
 
     /** @param {Element} body */
-    xmlOutput (body) {
-        log.debug(body.outerHTML, 'color: darkcyan');
+    xmlOutput(body) {
+        log.debug('%c%s', 'color: darkcyan', body.outerHTML);
     }
 
     async bind () {
@@ -339,11 +339,9 @@ export class Connection extends Strophe.Connection {
                 this.disconnection_cause === LOGOUT ||
                 reason === Strophe.ErrorCondition.NO_AUTH_MECH ||
                 reason === "host-unknown" ||
-                reason === "remote-connection-failed"
+                reason === "remote-connection-failed" ||
+                reason === "not-well-formed"
             ) {
-                return this.finishDisconnection();
-            } else if (this.disconnection_cause === Strophe.Status.CONNFAIL && this.disconnection_reason  === 'not-well-formed') {
-                // Don't try to automatically reconnect on a not-well-formed error
                 return this.finishDisconnection();
             }
             api.connection.reconnect();

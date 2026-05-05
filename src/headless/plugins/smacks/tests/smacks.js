@@ -1,11 +1,9 @@
 /* global converse */
 import mock from '../../../tests/mock.js';
 
-const { stx, Strophe, sizzle, u } = converse.env;
+const { stx, Strophe, Stanza, u } = converse.env;
 
 describe('XEP-0198 Stream Management', function () {
-    beforeAll(() => jasmine.addMatchers({ toEqualStanza: jasmine.toEqualStanza }));
-
     it(
         'gets enabled with an <enable> stanza and resumed with a <resume> stanza',
         mock.initConverse(
@@ -15,7 +13,7 @@ describe('XEP-0198 Stream Management', function () {
                 enable_smacks: true,
                 show_controlbox_by_default: true,
                 smacks_max_unacked_stanzas: 2,
-                blacklisted_plugins: ['converse-blocklist', 'converse-reactions'],
+                blacklisted_plugins: ['converse-blocklist'],
             },
             async function (_converse) {
                 await _converse.api.user.login('romeo@montague.lit/orchard', 'secret');
@@ -24,7 +22,7 @@ describe('XEP-0198 Stream Management', function () {
                 let stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'enable', 1000).pop());
 
                 expect(_converse.session.get('smacks_enabled')).toBe(false);
-                expect(Strophe.serialize(stanza)).toEqual('<enable resume="true" xmlns="urn:xmpp:sm:3"/>');
+                expect(stanza).toEqualStanza(stx`<enable resume="true" xmlns="urn:xmpp:sm:3"/>`);
 
                 let result = stx`<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(result));
@@ -37,31 +35,38 @@ describe('XEP-0198 Stream Management', function () {
 
                 const disco_iq = IQ_stanzas[0];
                 expect(disco_iq).toEqualStanza(stx`
-            <iq from="romeo@montague.lit/orchard" id="${disco_iq.getAttribute('id')}" to="montague.lit" type="get" xmlns="jabber:client">
-                <query xmlns="http://jabber.org/protocol/disco#info"/></iq>`);
+                    <iq xmlns="jabber:client" type="get" from="romeo@montague.lit" to="romeo@montague.lit" id="${disco_iq.getAttribute('id')}">
+                        <pubsub xmlns="http://jabber.org/protocol/pubsub">
+                            <items node="urn:xmpp:reactions:popular:0" max_items="1"/>
+                        </pubsub>
+                    </iq>`);
 
                 expect(IQ_stanzas[1]).toEqualStanza(stx`
-            <iq id="${IQ_stanzas[1].getAttribute('id')}" type="get" xmlns="jabber:client">
-                <query xmlns="jabber:iq:roster"/></iq>`);
+                    <iq from="romeo@montague.lit/orchard" id="${IQ_stanzas[1].getAttribute('id')}" to="montague.lit" type="get" xmlns="jabber:client">
+                        <query xmlns="http://jabber.org/protocol/disco#info"/></iq>`);
                 await mock.waitForRoster(_converse, 'current', 1);
 
                 expect(IQ_stanzas[2]).toEqualStanza(stx`
-            <iq from="romeo@montague.lit/orchard" id="${IQ_stanzas[2].getAttribute('id')}" to="romeo@montague.lit" type="get" xmlns="jabber:client">
-                <query xmlns="http://jabber.org/protocol/disco#info"/></iq>`);
+                    <iq id="${IQ_stanzas[2].getAttribute('id')}" type="get" xmlns="jabber:client">
+                        <query xmlns="jabber:iq:roster"/></iq>`);
 
                 expect(IQ_stanzas[3]).toEqualStanza(stx`
-            <iq from="romeo@montague.lit/orchard" id="${IQ_stanzas[3].getAttribute('id')}" type="set" xmlns="jabber:client">
-                <enable xmlns="urn:xmpp:carbons:2"/></iq>`);
+                    <iq from="romeo@montague.lit/orchard" id="${IQ_stanzas[3].getAttribute('id')}" to="romeo@montague.lit" type="get" xmlns="jabber:client">
+                        <query xmlns="http://jabber.org/protocol/disco#info"/></iq>`);
+
+                expect(IQ_stanzas[4]).toEqualStanza(stx`
+                    <iq from="romeo@montague.lit/orchard" id="${IQ_stanzas[4].getAttribute('id')}" type="set" xmlns="jabber:client">
+                        <enable xmlns="urn:xmpp:carbons:2"/></iq>`);
 
                 await u.waitUntil(() => sent_stanzas.filter((s) => s.nodeName === 'presence').length);
 
-                expect(sent_stanzas.filter((s) => s.nodeName === 'r').length).toBe(2);
-                expect(_converse.session.get('unacked_stanzas').length).toBe(5);
+                expect(sent_stanzas.filter((s) => s.nodeName === 'r').length).toBe(3);
+                expect(_converse.session.get('unacked_stanzas').length).toBe(6);
 
                 // test handling of acks
                 let ack = stx`<a xmlns="urn:xmpp:sm:3" h="2"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(ack));
-                expect(_converse.session.get('unacked_stanzas').length).toBe(3);
+                expect(_converse.session.get('unacked_stanzas').length).toBe(4);
 
                 // test handling of ack requests
                 let r = stx`<r xmlns="urn:xmpp:sm:3"/>`;
@@ -69,38 +74,40 @@ describe('XEP-0198 Stream Management', function () {
 
                 // "h" is 3 because we received two IQ responses, for disco and the roster
                 ack = await u.waitUntil(() => sent_stanzas.filter((s) => s.nodeName === 'a').pop());
-                expect(Strophe.serialize(ack)).toBe('<a h="2" xmlns="urn:xmpp:sm:3"/>');
+                expect(ack).toEqualStanza(stx`<a h="2" xmlns="urn:xmpp:sm:3"/>`);
 
                 const disco_result = stx`
-            <iq xmlns="jabber:client" type="result" from="montague.lit" to="romeo@montague.lit/orchard" id="${disco_iq.getAttribute('id')}">
-                <query xmlns="http://jabber.org/protocol/disco#info">
-                    <identity category="server" type="im"/>
-                    <feature var="http://jabber.org/protocol/disco#info"/>
-                    <feature var="http://jabber.org/protocol/disco#items"/>
-                </query>
-            </iq>`;
+                    <iq xmlns="jabber:client" type="result" from="montague.lit" to="romeo@montague.lit/orchard" id="${disco_iq.getAttribute('id')}">
+                        <query xmlns="http://jabber.org/protocol/disco#info">
+                            <identity category="server" type="im"/>
+                            <feature var="http://jabber.org/protocol/disco#info"/>
+                            <feature var="http://jabber.org/protocol/disco#items"/>
+                        </query>
+                    </iq>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(disco_result));
 
                 ack = stx`<a xmlns="urn:xmpp:sm:3" h="2"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(ack));
-                expect(_converse.session.get('unacked_stanzas').length).toBe(3);
+                expect(_converse.session.get('unacked_stanzas').length).toBe(4);
 
-                expect(_converse.session.get('unacked_stanzas')[0]).toBe(Strophe.serialize(IQ_stanzas[2]));
-                expect(_converse.session.get('unacked_stanzas')[1]).toBe(Strophe.serialize(IQ_stanzas[3]));
-                expect(_converse.session.get('unacked_stanzas')[2]).toBe(
-                    `<presence xmlns="jabber:client"><priority>0</priority><x xmlns="vcard-temp:x:update"/>` +
-                        `<c hash="sha-1" node="https://conversejs.org" ver="5xpk8wyeMSdAjnSeIv3fwIjd1r0=" xmlns="http://jabber.org/protocol/caps"/>` +
-                        `</presence>`,
+                const unacked_stanzas = _converse.session.get('unacked_stanzas').map(Stanza.fromString);
+                expect(unacked_stanzas[0]).toEqualStanza(IQ_stanzas[2]);
+                expect(unacked_stanzas[1]).toEqualStanza(IQ_stanzas[3]);
+                expect(unacked_stanzas[2]).toEqualStanza(IQ_stanzas[4]);
+                expect(unacked_stanzas[3]).toEqualStanza(
+                    stx`<presence xmlns="jabber:client"><priority>0</priority><x xmlns="vcard-temp:x:update"/>
+                        <c hash="sha-1" node="https://conversejs.org" ver="5xpk8wyeMSdAjnSeIv3fwIjd1r0=" xmlns="http://jabber.org/protocol/caps"/>
+                        </presence>`
                 );
 
                 r = stx`<r xmlns="urn:xmpp:sm:3"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(r));
 
                 ack = await u.waitUntil(() =>
-                    sent_stanzas.filter((s) => s.nodeName === 'a' && s.getAttribute('h') === '3').pop(),
+                    sent_stanzas.filter((s) => s.nodeName === 'a' && s.getAttribute('h') === '3').pop()
                 );
 
-                expect(Strophe.serialize(ack)).toBe('<a h="3" xmlns="urn:xmpp:sm:3"/>');
+                expect(ack).toEqualStanza(stx`<a h="3" xmlns="urn:xmpp:sm:3"/>`);
                 await _converse.api.waitUntil('rosterInitialized');
 
                 // test session resumption
@@ -108,8 +115,8 @@ describe('XEP-0198 Stream Management', function () {
                 IQ_stanzas = _converse.api.connection.get().IQ_stanzas;
                 await _converse.api.connection.reconnect();
                 stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'resume').pop(), 1000);
-                expect(Strophe.serialize(stanza)).toEqual(
-                    '<resume h="3" previd="some-long-sm-id" xmlns="urn:xmpp:sm:3"/>',
+                expect(stanza).toEqualStanza(
+                    stx`<resume h="3" previd="some-long-sm-id" xmlns="urn:xmpp:sm:3"/>`
                 );
 
                 result = stx`<resumed xmlns="urn:xmpp:sm:3" h="another-sequence-number" previd="some-long-sm-id"/>`;
@@ -120,24 +127,26 @@ describe('XEP-0198 Stream Management', function () {
                 expect(_converse.session.get('smacks_enabled')).toBe(true);
 
                 await new Promise((resolve) => _converse.api.listen.once('reconnected', resolve));
-                await u.waitUntil(() => IQ_stanzas.length === 2);
+                await u.waitUntil(() => IQ_stanzas.length === 3);
 
                 // Test that unacked stanzas get resent out
                 let iq = IQ_stanzas.pop();
                 expect(iq).toEqualStanza(stx`
-            <iq from="romeo@montague.lit/orchard" id="${iq.getAttribute('id')}" type="set" xmlns="jabber:client">
-                <enable xmlns="urn:xmpp:carbons:2"/>
-            </iq>`);
+                    <iq from="romeo@montague.lit/orchard" id="${iq.getAttribute('id')}" type="set" xmlns="jabber:client">
+                        <enable xmlns="urn:xmpp:carbons:2"/>
+                    </iq>`);
 
                 iq = IQ_stanzas.pop();
                 expect(iq).toEqualStanza(stx`
-            <iq from="romeo@montague.lit/orchard" id="${iq.getAttribute('id')}" to="romeo@montague.lit" type="get" xmlns="jabber:client">
-                <query xmlns="http://jabber.org/protocol/disco#info"/>
-            </iq>`);
+                    <iq from="romeo@montague.lit/orchard" id="${iq.getAttribute('id')}" to="romeo@montague.lit" type="get" xmlns="jabber:client">
+                        <query xmlns="http://jabber.org/protocol/disco#info"/>
+                    </iq>`);
 
-                expect(IQ_stanzas.filter((iq) => sizzle('query[xmlns="jabber:iq:roster"]', iq).pop()).length).toBe(0);
-            },
-        ),
+                iq = IQ_stanzas.pop();
+                expect(iq).toEqualStanza(stx`
+                    <iq xmlns="jabber:client" id="${iq.getAttribute('id')}" type="get"><query xmlns="jabber:iq:roster"/></iq>`);
+            }
+        )
     );
 
     it(
@@ -156,7 +165,7 @@ describe('XEP-0198 Stream Management', function () {
 
                 const sent_stanzas = _converse.api.connection.get().sent_stanzas;
                 let stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'enable').pop(), 1000);
-                expect(Strophe.serialize(stanza)).toEqual('<enable resume="true" xmlns="urn:xmpp:sm:3"/>');
+                expect(stanza).toEqualStanza(stx`<enable resume="true" xmlns="urn:xmpp:sm:3"/>`);
 
                 let result = stx`<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(result));
@@ -178,8 +187,8 @@ describe('XEP-0198 Stream Management', function () {
                 // send_initial_presence at that point, before onConnected() fires.
                 // This is fully synchronous so we can assert immediately.
                 expect(conn.send_initial_presence).toBe(false);
-            },
-        ),
+            }
+        )
     );
 
     it(
@@ -197,11 +206,8 @@ describe('XEP-0198 Stream Management', function () {
                 await _converse.api.user.login('romeo@montague.lit/orchard', 'secret');
 
                 const sent_stanzas = _converse.api.connection.get().sent_stanzas;
-                let stanza = await u.waitUntil(
-                    () => sent_stanzas.filter((s) => s.tagName === 'enable').pop(),
-                    1000
-                );
-                expect(Strophe.serialize(stanza)).toEqual('<enable resume="true" xmlns="urn:xmpp:sm:3"/>');
+                let stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'enable').pop(), 1000);
+                expect(stanza).toEqualStanza(stx`<enable resume="true" xmlns="urn:xmpp:sm:3"/>`);
 
                 let result = stx`<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(result));
@@ -212,10 +218,7 @@ describe('XEP-0198 Stream Management', function () {
 
                 // Reconnect and successfully resume the SMACKS session
                 await _converse.api.connection.reconnect();
-                stanza = await u.waitUntil(
-                    () => sent_stanzas.filter((s) => s.tagName === 'resume').pop(),
-                    1000
-                );
+                stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'resume').pop(), 1000);
 
                 const conn = _converse.api.connection.get();
                 result = stx`<resumed xmlns="urn:xmpp:sm:3" h="another-sequence-number" previd="some-long-sm-id"/>`;
@@ -244,7 +247,7 @@ describe('XEP-0198 Stream Management', function () {
                 await _converse.api.user.login('romeo@montague.lit/orchard', 'secret');
                 const sent_stanzas = _converse.api.connection.get().sent_stanzas;
                 let stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'enable').pop());
-                expect(Strophe.serialize(stanza)).toEqual('<enable resume="true" xmlns="urn:xmpp:sm:3"/>');
+                expect(stanza).toEqualStanza(stx`<enable resume="true" xmlns="urn:xmpp:sm:3"/>`);
                 let result = stx`<enabled xmlns="urn:xmpp:sm:3" id="some-long-sm-id" resume="true"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(result));
 
@@ -253,8 +256,8 @@ describe('XEP-0198 Stream Management', function () {
                 // test session resumption
                 await _converse.api.connection.reconnect();
                 stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'resume').pop());
-                expect(Strophe.serialize(stanza)).toEqual(
-                    '<resume h="1" previd="some-long-sm-id" xmlns="urn:xmpp:sm:3"/>',
+                expect(stanza).toEqualStanza(
+                    stx`<resume h="1" previd="some-long-sm-id" xmlns="urn:xmpp:sm:3"/>`
                 );
 
                 result = stx`
@@ -273,7 +276,7 @@ describe('XEP-0198 Stream Management', function () {
 
                 await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'enable').length === 2);
                 stanza = sent_stanzas.filter((s) => s.tagName === 'enable').pop();
-                expect(Strophe.serialize(stanza)).toEqual('<enable resume="true" xmlns="urn:xmpp:sm:3"/>');
+                expect(stanza).toEqualStanza(stx`<enable resume="true" xmlns="urn:xmpp:sm:3"/>`);
 
                 result = stx`<enabled xmlns="urn:xmpp:sm:3" id="another-long-sm-id" resume="true"/>`;
                 _converse.api.connection.get()._dataRecv(mock.createRequest(result));
@@ -282,8 +285,8 @@ describe('XEP-0198 Stream Management', function () {
                 // Check that the roster gets fetched
                 await mock.waitForRoster(_converse, 'current', 1);
                 await new Promise((resolve) => _converse.api.listen.once('reconnected', resolve));
-            },
-        ),
+            }
+        )
     );
 
     it(
@@ -320,7 +323,7 @@ describe('XEP-0198 Stream Management', function () {
                         'smacks_stream_id': 'some-long-sm-id',
                         'push_enabled': ['romeo@montague.lit'],
                         'roster_cached': true,
-                    }),
+                    })
                 );
 
                 const muc_jid = 'lounge@montague.lit';
@@ -338,7 +341,7 @@ describe('XEP-0198 Stream Management', function () {
                         id: muc_jid,
                         box_id: 'box-YXJnQGNvbmZlcmVuY2UuY2hhdC5leGFtcGxlLm9yZw==',
                         nick: 'romeo',
-                    }),
+                    })
                 );
 
                 const proto = Object.getPrototypeOf(api.connection.get());
@@ -357,8 +360,8 @@ describe('XEP-0198 Stream Management', function () {
 
                 const sent_stanzas = api.connection.get().sent_stanzas;
                 const stanza = await u.waitUntil(() => sent_stanzas.filter((s) => s.tagName === 'resume').pop());
-                expect(Strophe.serialize(stanza)).toEqual(
-                    '<resume h="580" previd="some-long-sm-id" xmlns="urn:xmpp:sm:3"/>',
+                expect(stanza).toEqualStanza(
+                    stx`<resume h="580" previd="some-long-sm-id" xmlns="urn:xmpp:sm:3"/>`
                 );
 
                 const result = stx`<resumed xmlns="urn:xmpp:sm:3" h="another-sequence-number" previd="some-long-sm-id"/>`;
@@ -370,7 +373,7 @@ describe('XEP-0198 Stream Management', function () {
                 spyOn(_converse.chatboxes, 'onChatBoxesFetched').and.callFake((collection) => {
                     const muc = new _converse.ChatRoom(
                         { 'jid': muc_jid, 'id': muc_jid, nick },
-                        { 'collection': _converse.chatboxes },
+                        { 'collection': _converse.chatboxes }
                     );
                     _converse.chatboxes.add(muc);
                     func.call(_converse.chatboxes, collection);
@@ -396,7 +399,7 @@ describe('XEP-0198 Stream Management', function () {
                 await muc.messages.fetched;
                 await u.waitUntil(() => muc.messages.length);
                 expect(muc.messages.at(0).get('message')).toBe('First message');
-            },
-        ),
+            }
+        )
     );
 });

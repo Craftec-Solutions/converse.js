@@ -89,6 +89,9 @@ export default class AutoCompleteComponent extends CustomElement {
         required: {
             type: BooleanConstructor;
         };
+        suffix: {
+            type: StringConstructor;
+        };
         triggers: {
             type: StringConstructor;
         };
@@ -115,10 +118,14 @@ export default class AutoCompleteComponent extends CustomElement {
     position: string;
     renderItem: typeof getAutoCompleteItem;
     required: boolean;
+    suffix: string;
     triggers: string;
     validate: any;
     value: string;
-    evaluate: (...args: any[]) => void;
+    evaluate: {
+        (...args: any[]): void;
+        flush(): void;
+    };
     render(): import("lit-html").TemplateResult<1>;
     firstUpdated(): void;
     auto_complete: AutoComplete;

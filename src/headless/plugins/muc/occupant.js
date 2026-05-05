@@ -21,7 +21,6 @@ class MUCOccupant extends ModelWithVCard(ModelWithMessages(ColorAwareModel(Model
     /**
      * @typedef {import('../../shared/types').MessageAttributes} MessageAttributes
      * @typedef {import('../../shared/errors').StanzaParseError} StanzaParseError
-     * @typedef {import('../../shared/message.js').default} BaseMessage
      * @typedef {import('./message.js').default} MUCMessage
      */
 
@@ -238,7 +237,7 @@ class MUCOccupant extends ModelWithVCard(ModelWithMessages(ColorAwareModel(Model
     async getOutgoingMessageAttributes(attrs) {
         const origin_id = u.getUniqueId();
         const text = attrs?.body;
-        const body = text ? u.shortnamesToUnicode(text) : undefined;
+        const body = text ? u.emojis.shortnamesToUnicode(text) : undefined;
         const muc = this.collection.chatroom;
         const own_occupant = muc.getOwnOccupant();
         attrs = Object.assign(

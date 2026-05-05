@@ -44,6 +44,9 @@ module.exports = function(config) {
       { pattern: "src/shared/tests/mock.js", type: 'module' },
       { pattern: "src/headless/tests/mock.js", type: 'module' },
 
+      // Run earlier, otherwise it fails (times out) with the message avatar not updating for some reason
+      { pattern: "src/plugins/chatview/tests/message-avatar.js", type: 'module' },
+
       // Ideally this should go into the headless test runner
       { pattern: "src/headless/plugins/vcard/tests/update.js", type: 'module' },
 
@@ -124,7 +127,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['ChromeHeadless'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

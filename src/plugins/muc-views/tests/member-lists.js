@@ -1,9 +1,7 @@
 /*global mock, converse */
-const { Strophe, u, stx } = converse.env;
+const { Strophe, sizzle, u, stx } = converse.env;
 
 describe('A Groupchat', function () {
-    beforeAll(() => jasmine.addMatchers({ toEqualStanza: jasmine.toEqualStanza }));
-
     describe('upon being entered', function () {
         it(
             'will fetch the member list if muc_fetch_members is true',
@@ -17,25 +15,19 @@ describe('A Groupchat', function () {
 
                 // Check in reverse order that we requested all three lists
                 const owner_iq = sent_IQs.pop();
-                expect(Strophe.serialize(owner_iq)).toBe(
-                    `<iq id="${owner_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">` +
-                        `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="owner"/></query>` +
-                        `</iq>`,
-                );
+                expect(owner_iq).toEqualStanza(stx`<iq id="${owner_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">
+                    <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="owner"/></query>
+                </iq>`);
 
                 const admin_iq = sent_IQs.pop();
-                expect(Strophe.serialize(admin_iq)).toBe(
-                    `<iq id="${admin_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">` +
-                        `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="admin"/></query>` +
-                        `</iq>`,
-                );
+                expect(admin_iq).toEqualStanza(stx`<iq id="${admin_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">
+                    <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="admin"/></query>
+                </iq>`);
 
                 const member_iq = sent_IQs.pop();
-                expect(Strophe.serialize(member_iq)).toBe(
-                    `<iq id="${member_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">` +
-                        `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="member"/></query>` +
-                        `</iq>`,
-                );
+                expect(member_iq).toEqualStanza(stx`<iq id="${member_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">
+                    <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="member"/></query>
+                </iq>`);
                 view.close();
 
                 _converse.api.connection.get().IQ_stanzas = [];
@@ -117,23 +109,17 @@ describe('A Groupchat', function () {
 
                     // Check in reverse order that we requested all three lists
                     const owner_iq = sent_IQs.pop();
-                    expect(Strophe.serialize(owner_iq)).toBe(
-                        `<iq id="${owner_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">` +
-                            `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="owner"/></query>` +
-                            `</iq>`,
-                    );
+                    expect(owner_iq).toEqualStanza(stx`<iq id="${owner_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">
+                        <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="owner"/></query>
+                    </iq>`);
                     const admin_iq = sent_IQs.pop();
-                    expect(Strophe.serialize(admin_iq)).toBe(
-                        `<iq id="${admin_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">` +
-                            `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="admin"/></query>` +
-                            `</iq>`,
-                    );
+                    expect(admin_iq).toEqualStanza(stx`<iq id="${admin_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">
+                        <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="admin"/></query>
+                    </iq>`);
                     const member_iq = sent_IQs.pop();
-                    expect(Strophe.serialize(member_iq)).toBe(
-                        `<iq id="${member_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">` +
-                            `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="member"/></query>` +
-                            `</iq>`,
-                    );
+                    expect(member_iq).toEqualStanza(stx`<iq id="${member_iq.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">
+                        <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="member"/></query>
+                    </iq>`);
 
                     // It might be that the user is not allowed to fetch certain lists.
                     let err_stanza = u.toStanza(
@@ -181,8 +167,6 @@ describe('A Groupchat', function () {
 });
 
 describe('Someone being invited to a groupchat', function () {
-    beforeAll(() => jasmine.addMatchers({ toEqualStanza: jasmine.toEqualStanza }));
-
     it(
         'will first be added to the member list if the groupchat is members only',
         mock.initConverse(['chatBoxesFetched'], {}, async function (_converse) {
@@ -197,15 +181,13 @@ describe('Someone being invited to a groupchat', function () {
             let stanza = await u.waitUntil(() =>
                 sent_IQs
                     .filter((iq) =>
-                        iq.querySelector(`iq[to="${muc_jid}"] query[xmlns="http://jabber.org/protocol/disco#info"]`),
+                        sizzle(`iq[to="${muc_jid}"] query[xmlns="http://jabber.org/protocol/disco#info"]`, iq).length,
                     )
                     .pop(),
             );
-            expect(Strophe.serialize(stanza)).toBe(
-                `<iq from="romeo@montague.lit/orchard" id="${stanza.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">` +
-                    `<query xmlns="http://jabber.org/protocol/disco#info"/>` +
-                    `</iq>`,
-            );
+            expect(stanza).toEqualStanza(stx`<iq from="romeo@montague.lit/orchard" id="${stanza.getAttribute('id')}" to="${muc_jid}" type="get" xmlns="jabber:client">
+                <query xmlns="http://jabber.org/protocol/disco#info"/>
+            </iq>`);
 
             const features_stanza = stx`
             <iq from="coven@chat.shakespeare.lit"
@@ -245,25 +227,19 @@ describe('Someone being invited to a groupchat', function () {
 
             // Check in reverse order that we requested all three lists
             const owner_iq = sent_IQs.pop();
-            expect(Strophe.serialize(owner_iq)).toBe(
-                `<iq id="${owner_iq.getAttribute('id')}" to="coven@chat.shakespeare.lit" type="get" xmlns="jabber:client">` +
-                    `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="owner"/></query>` +
-                    `</iq>`,
-            );
+            expect(owner_iq).toEqualStanza(stx`<iq id="${owner_iq.getAttribute('id')}" to="coven@chat.shakespeare.lit" type="get" xmlns="jabber:client">
+                <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="owner"/></query>
+            </iq>`);
 
             const admin_iq = sent_IQs.pop();
-            expect(Strophe.serialize(admin_iq)).toBe(
-                `<iq id="${admin_iq.getAttribute('id')}" to="coven@chat.shakespeare.lit" type="get" xmlns="jabber:client">` +
-                    `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="admin"/></query>` +
-                    `</iq>`,
-            );
+            expect(admin_iq).toEqualStanza(stx`<iq id="${admin_iq.getAttribute('id')}" to="coven@chat.shakespeare.lit" type="get" xmlns="jabber:client">
+                <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="admin"/></query>
+            </iq>`);
 
             const member_iq = sent_IQs.pop();
-            expect(Strophe.serialize(member_iq)).toBe(
-                `<iq id="${member_iq.getAttribute('id')}" to="coven@chat.shakespeare.lit" type="get" xmlns="jabber:client">` +
-                    `<query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="member"/></query>` +
-                    `</iq>`,
-            );
+            expect(member_iq).toEqualStanza(stx`<iq id="${member_iq.getAttribute('id')}" to="coven@chat.shakespeare.lit" type="get" xmlns="jabber:client">
+                <query xmlns="http://jabber.org/protocol/muc#admin"><item affiliation="member"/></query>
+            </iq>`);
 
             // Now the service sends the member lists to the user
             const member_list_stanza = stx`
@@ -306,7 +282,7 @@ describe('Someone being invited to a groupchat', function () {
             stanza = await u.waitUntil(() =>
                 sent_IQs
                     .filter((iq) =>
-                        iq.querySelector(`iq[to="${muc_jid}"] query[xmlns="http://jabber.org/protocol/muc#admin"]`),
+                        sizzle(`iq[to="${muc_jid}"] query[xmlns="http://jabber.org/protocol/muc#admin"]`, iq).length,
                     )
                     .pop(),
             );

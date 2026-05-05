@@ -309,7 +309,7 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     enableRAI() {
         if (api.settings.get('muc_subscribe_to_rai')) {
             const muc_domain = Strophe.getDomainFromJid(this.get('jid'));
-            api.user.presence.send({ to: muc_domain }, $build('rai', { 'xmlns': Strophe.NS.RAI }));
+            api.user.presence.send({ to: muc_domain }, stx`<rai xmlns="${Strophe.NS.RAI}"></rai>`);
         }
     }
 
@@ -1145,7 +1145,7 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
             [text, references] = this.parseTextForReferences(attrs.body);
         }
         const origin_id = getUniqueId();
-        const body = text ? u.shortnamesToUnicode(text) : undefined;
+        const body = text ? u.emojis.shortnamesToUnicode(text) : undefined;
 
         // Get reply attributes from chatbox model if replying to a message
         const reply_to_id = this.get('reply_to_id');

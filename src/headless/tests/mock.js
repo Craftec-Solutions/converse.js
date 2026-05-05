@@ -44,6 +44,10 @@ jasmine.toEqualStanza = function toEqualStanza() {
     };
 };
 
+// Register toEqualStanza globally so all test files can use it without
+// needing to call jasmine.addMatchers themselves
+beforeAll(() => jasmine.addMatchers({ toEqualStanza: jasmine.toEqualStanza }));
+
 export const domain = 'montague.lit';
 
 export const current_contacts_map = {
@@ -68,7 +72,7 @@ export const pend_names = ['Lord Capulet', 'Guard', 'Servant'];
 export const cur_names = Object.keys(current_contacts_map);
 
 export async function waitForRoster(_converse, type = 'current', length = -1, include_nick = true, grouped = true) {
-    const { u, sizzle } = window.converse.env;
+    const { Stanza, u, sizzle } = window.converse.env;
     const s = `iq[type="get"] query[xmlns="${Strophe.NS.ROSTER}"]`;
     const iq = await u.waitUntil(() =>
         _converse.api.connection
@@ -91,17 +95,20 @@ export async function waitForRoster(_converse, type = 'current', length = -1, in
                            xmlns="jabber:client">
         <query xmlns="jabber:iq:roster">
             ${pending_names.map(
-                (name) => stx`<item jid="${name.replace(/ /g, '.').toLowerCase()}@${domain}"
-                ${include_nick ? stx`name="${name}"` : ''}
-                subscription="none"
-                ask="subscribe"/>`,
+                (name) => stx`
+                    <item jid="${name.replace(/ /g, '.').toLowerCase()}@${domain}"
+                        ${include_nick ? Stanza.unsafeXML(`name="${name}"`) : ''}
+                        subscription="none"
+                        ask="subscribe">
+                    </item>`,
             )}
             ${current_names.map(
-                (name) => stx`<item jid="${name.replace(/ /g, '.').toLowerCase()}@${domain}"
-                ${include_nick ? stx`name="${name}"` : ''}
-                subscription="both">
-                ${grouped ? current_contacts_map[name].map((g) => stx`<group>${g}</group>`) : ''}
-            </item>`,
+                (name) => stx`
+                    <item jid="${name.replace(/ /g, '.').toLowerCase()}@${domain}"
+                        ${include_nick ? Stanza.unsafeXML(`name="${name}"`) : ''}
+                        subscription="both">
+                        ${grouped ? current_contacts_map[name].map((g) => stx`<group>${g}</group>`) : ''}
+                    </item>`,
             )}
         </query>
     </iq>`;
@@ -147,11 +154,14 @@ export async function waitForNewMUCDiscoInfo(_converse, muc_jid) {
     const stanzas = connection.IQ_stanzas;
     const stanza = await u.waitUntil(() =>
         stanzas
-            .filter((iq) =>
-                iq.querySelector(`iq[to="${muc_jid}"] query[xmlns="http://jabber.org/protocol/disco#info"]`),
-            )
+            .filter((iq) => {
+                if (iq.getAttribute('to') === muc_jid) {
+                    return iq.getElementsByTagNameNS('http://jabber.org/protocol/disco#info', 'query').length;
+                }
+            })
             .pop(),
     );
+
     const features_stanza = stx`<iq from="${muc_jid}"
                 id="${stanza.getAttribute('id')}"
                 to="${own_jid}"
@@ -301,9 +311,12 @@ export async function waitForMUCDiscoInfo(_converse, muc_jid, features = [], set
     const stanzas = _converse.api.connection.get().IQ_stanzas;
     const stanza = await u.waitUntil(() =>
         stanzas
-            .filter((iq) =>
-                iq.querySelector(`iq[to="${muc_jid}"] query[xmlns="http://jabber.org/protocol/disco#info"]`),
-            )
+            .filter((iq) => {
+                if (iq.getAttribute('to') === muc_jid) {
+                    const query = iq.getElementsByTagNameNS('http://jabber.org/protocol/disco#info', 'query');
+                    return query.length > 0;
+                }
+            })
             .pop(),
     );
     features = features.length ? features : default_muc_features;

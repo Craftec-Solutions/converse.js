@@ -23,6 +23,8 @@ Or set up your own instance:
 
 ```bash
 git clone git@github.com:conversejs/converse.js.git
+cd converse.js
+git clone https://github.com/conversejs/media.git media; // To see images like sponsorship logos
 npm install
 npm run build
 npm run serve -- -p 8008
@@ -30,7 +32,7 @@ npm run serve -- -p 8008
 
 You can then open http://localhost:8008/dev.html in your browser to access Converse.
 
-See our [quickstart guide](https://conversejs.org/docs/html/quickstart.html) for more details.
+See our [quickstart guide](https://conversejs.org/docs/quickstart/) for more details.
 
 ## Screenshots
 
@@ -55,11 +57,11 @@ See our [quickstart guide](https://conversejs.org/docs/html/quickstart.html) for
 
 ## Documentation
 
-Comprehensive documentation is available at [conversejs.org/docs/html](https://conversejs.org/docs/html), including:
+Comprehensive documentation is available at [conversejs.org/docs](https://conversejs.org/docs/), including:
 
-- [Quickstart Guide](https://conversejs.org/docs/html/quickstart.html)
-- [Configuration Options](https://conversejs.org/docs/html/configuration.html)
-- [Plugin Development](https://conversejs.org/docs/html/plugin_development.html)
+- [Quickstart Guide](https://conversejs.org/docs/quickstart/)
+- [Configuration Options](https://conversejs.org/docs/configuration/)
+- [Plugin Development](https://conversejs.org/docs/development/plugin-development/)
 
 ## Key Features
 

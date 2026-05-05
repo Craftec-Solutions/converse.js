@@ -346,7 +346,7 @@ export default function ModelWithMessages(BaseModel) {
              * @property {(ChatBox|MUC)} data.chatbox
              * @property {(BaseMessage)} data.message
              */
-            api.trigger('sendMessage', { 'chatbox': this, message });
+            api.trigger('sendMessage', { chatbox: this, message });
             return message;
         }
 
